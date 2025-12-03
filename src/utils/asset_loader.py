@@ -1,0 +1,1 @@
+#load các file ảnh và âm thanh

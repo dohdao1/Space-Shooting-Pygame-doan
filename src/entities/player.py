@@ -1,0 +1,1 @@
+#tổng quan người chơi, di chuyển bắn đạn(việc di chuyển của viên đạn bắn ra là do bullet xử lý)

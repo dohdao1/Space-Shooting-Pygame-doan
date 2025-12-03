@@ -1,0 +1,1 @@
+# thiên thạch (cách rơi của nó) có nhiều loại thiên thạch(lớn nhỏ, damage khác nhau nha)

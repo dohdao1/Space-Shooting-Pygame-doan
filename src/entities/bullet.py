@@ -1,0 +1,1 @@
+# đạn do người chơi bắn ra

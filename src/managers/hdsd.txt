@@ -1,0 +1,1 @@
+quản lý trò chơi, tính toán va chạm, tính điểm, các thiên thạch xuất hiện, âm thanh trong game
