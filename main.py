@@ -15,4 +15,20 @@ BLUE = (100, 100, 255)
 pygame.mixer.init()
 pygame.mixer.music.load('background_music.mp3')
 pygame.mixer.music.play(-1)  # Play music in a loop
+pygame.mixer.music.set_volume(0.5)
+
+#người chơi
+pygame.image.load('player.png')
+player_x, player_y = 370, 500
+player_speed = 5
+
+#đạn
+bullet_img = pygame.image.load('bullet.png')
+bullet_list = []
+bullet_speed = 10
+bullet_sound = pygame.mixer.Sound('laser.wav')
+
+def fire_bullet(x, y):
+    bullet_list.append([x , y ])
+    bullet_sound.play()
 
