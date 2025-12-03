@@ -1,0 +1,1 @@
+hiển thị ra màn hình, hiển thị với hình ảnh từ assets

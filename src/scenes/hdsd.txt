@@ -1,0 +1,1 @@
+các màn hình trong game(màn hình chính, menu, pause, thua)

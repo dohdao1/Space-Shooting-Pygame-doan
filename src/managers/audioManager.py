@@ -1,0 +1,1 @@
+#tính toán âm thanh thắng hoặc thua gì đó, âm thanh khi click chọn,... đây không phải là âm thanh khi va chạm, hay âm thanh bắn, mấy cái đó nên dc xử lý ở trong entities

@@ -1,0 +1,1 @@
+#quản lý các asteroid dc sinh ra, có thê kiểm soát bằng số lượng(không được quá một số nào đó hoặc tăng từ từ theo thời gian)

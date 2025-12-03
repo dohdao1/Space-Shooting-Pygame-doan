@@ -1,0 +1,1 @@
+#hàm phát hiện va chạm(có thể có nhiều kiểu va chạm, nên có thể sử dụng nhiều hàm để phát hiện va chạm[chẳng hạn va chạm giữa vật thể tròn và chữ nhật, tròn và tròn ,....])

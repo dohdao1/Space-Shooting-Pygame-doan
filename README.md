@@ -1,2 +1,2 @@
-# Space-Shooting-Pygame-doan
-trò chơi bắn máy bay đơn giản bằng pygame
+# Space-Shooting-by-Pygame
+trò chơi bắn thiên thạch đơn giản bằng pygame
