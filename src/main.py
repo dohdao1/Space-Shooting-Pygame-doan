@@ -1,39 +1,58 @@
 #file hoạt động chính của game
 import pygame, random, math
 import sys, os
+
 from config import *
+from scenes import mainMenu, gameScreen, pauseMenu, gameOver
+from managers.screenManager import screenManager
 
-pygame.init()       # khởi tạo game
-screen = pygame.display.set_mode((800, 600))    # quy định chiều dài chiều rộng game
-pygame.display.set_caption("Space Shooter")
-
-title_font = pygame.font.SysFont('arial', 64, bold=True)
-normal_font = pygame.font.SysFont('arial', 36)
-
-# Tạo chữ
-title_text = title_font.render("SPACE SHOOTER", True, BLUE)
-subtitle_text = normal_font.render("Press ESC to exit", True, WHITE)
-
-# Vòng lặp game
-clock = pygame.time.Clock()
-running = True
-
-while running:
-    # Xử lý sự kiện
-    for event in pygame.event.get():
-        if event.type == pygame.QUIT:
-            running = False
-        elif event.type == pygame.KEYDOWN:
-            if event.key == pygame.K_ESCAPE:
-                running = False
+class Game:
+    def __init__(self):
+        pygame.init()
+        self.screen = pygame.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT))
+        pygame.display.set_caption("Space Shooter")
+        
+        # khai báo quản lý các màn hình Screen manager
+        self.screen_manager = screenManager(self)
+        
+        # Đăng ký tất cả screens
+        self.screen_manager.register_screen("main_menu", mainMenu)
+        self.screen_manager.register_screen("game", gameScreen)
+        self.screen_manager.register_screen("pause", pauseMenu)
+        self.screen_manager.register_screen("game_over", gameOver)
+        
+        # Bắt đầu với main menu
+        self.screen_manager.switch_to("main_menu")
+        
+        # Game state
+        self.running = True
+        self.clock = pygame.time.Clock()
     
-    # Cập nhật màn hình
-    pygame.display.flip()
+    def run(self):
+        while self.running:
+            # Lấy tất cả events
+            events = pygame.event.get()
+            
+            # Xử lý quit event
+            for event in events:
+                if event.type == pygame.QUIT:
+                    self.running = False
+            
+            # gọi các phương thức từ quản lý màn hình
+            self.screen_manager.handle_events(events)
+            self.screen_manager.update()
+            self.screen_manager.draw()
+            
+            # Cập nhật màn hình liên tục
+            pygame.display.flip()
+            self.clock.tick(FPS)
     
-    # Giới hạn FPS
-    clock.tick(60)
+    def quit(self):
+        self.running = False
+        self.screen_manager.quit()
 
-# Kết thúc
-pygame.quit()
-print("\nGame đã thoát!")
-sys.exit()
+if __name__ == "__main__":
+    game = Game()
+    game.run()
+    pygame.quit()
+    sys.exit()
