@@ -2,6 +2,8 @@ import pygame
 import sys, os
 
 from entities.player import Player
+from entities.asteroid import Asteroid
+from managers.spawnAsteroid import AsteroidSpawner
 
 sys.path.append(os.path.dirname(os.path.abspath(__file__)))
 
@@ -32,6 +34,13 @@ class gameScreen(baseScreen):
         # nhóm sprite
         self.player_group = pygame.sprite.Group(self.player)
         self.bullet_group = pygame.sprite.Group()
+
+        # nhóm Asteroid
+        self.asteroid_group = pygame.sprite.Group()
+        self.spawner = AsteroidSpawner(self.asteroid_group, screen_width=self.screen.get_width())
+
+        #hiệu dứng bắn trúng
+        self.hit_particles =pygame.sprite.Group()
 
         # test UI
         self.score_button = pygame.Rect(10, 170, 100, 50)
@@ -67,6 +76,8 @@ class gameScreen(baseScreen):
         if self.is_paused:
             return
 
+        dt = self.game.clock.get_time()/1000.0
+
         # lấy phím nhấn hiện tại
         keys = pygame.key.get_pressed()
 
@@ -75,6 +86,16 @@ class gameScreen(baseScreen):
 
         # update đạn
         self.bullet_group.update()
+
+        # update asteroid
+        # self.asteroid_group.update(dt)
+        self.spawner.update(dt)
+
+        self.spawner.handle_bullet_collision(self.bullet_group, game_screen=self)
+        hits_player = pygame.sprite.spritecollide(self.player, self.asteroid_group, False, collided=pygame.sprite.collide_mask)
+        for asteroid in hits_player:
+            self.lives -= 1
+            asteroid.reset()
 
         # hover nút cộng điểm
         mouse_pos = pygame.mouse.get_pos()
@@ -92,6 +113,13 @@ class gameScreen(baseScreen):
         # vẽ Player & Bullet
         self.player_group.draw(self.screen)
         self.bullet_group.draw(self.screen)
+
+        #vẽ asteroid
+        self.asteroid_group.draw(self.screen)
+
+        #hiệu ứng đạn
+        self.spawner.hit_particles.draw(self.screen)
+        self.spawner.explosions.draw(self.screen)
 
         # vẽ UI điểm & mạng
         score_text = self.font.render(f"SCORE: {self.score}", True, (255, 255, 255))
