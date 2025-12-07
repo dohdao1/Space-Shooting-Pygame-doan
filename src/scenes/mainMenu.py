@@ -12,6 +12,7 @@ class mainMenu(baseScreen):
         # Các nút
         self.buttons = [
             {"text": "START GAME", "action": "game", "rect": pygame.Rect(0, 0, 300, 50)},
+            {"text": "SHOP", "action": "shop", "rect": pygame.Rect(0, 0, 300, 50)},
             {"text": "HOW TO PLAY", "action": "howto", "rect": pygame.Rect(0, 0, 300, 50)},
             {"text": "QUIT", "action": "quit", "rect": pygame.Rect(0, 0, 300, 50)}
         ]
@@ -38,6 +39,8 @@ class mainMenu(baseScreen):
                         if button["rect"].collidepoint(mouse_pos):
                             if button["action"] == "game":
                                 self.switch_to("game")
+                            elif button["action"] == "shop":
+                                self.switch_to("shop")
                             elif button["action"] == "quit":
                                 self.game.running = False
     
