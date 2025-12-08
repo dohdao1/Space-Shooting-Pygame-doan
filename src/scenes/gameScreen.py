@@ -55,6 +55,7 @@ class gameScreen(baseScreen):
                 self.game.running = False
             elif event.type == pygame.KEYDOWN:
                 if event.key in [pygame.K_ESCAPE, pygame.K_p]:
+                    pygame.mouse.set_visible(True)
                     self.switch_to("pause")
                 elif event.key == pygame.K_l:
                     self.lives = 0
@@ -71,6 +72,8 @@ class gameScreen(baseScreen):
                     life_button = pygame.Rect(10, 240, 100, 50)
                     if life_button.collidepoint(mouse_pos) and self.lives > 0:
                         self.lives -= 1
+ 
+
 
     def update(self):
         if self.is_paused:
@@ -104,6 +107,7 @@ class gameScreen(baseScreen):
         # kiểm tra thua
         if self.lives <= 0:
             self.game.game_over_data = {"score": self.score}
+            pygame.mouse.set_visible(True)
             self.switch_to("game_over", self.score)
 
     def draw(self):
@@ -147,3 +151,4 @@ class gameScreen(baseScreen):
         # hướng dẫn
         help_text = self.font_suggest.render("ESC/P: Pause Menu | L: Lose(thua ngay)", True, (200, 200, 200))
         self.screen.blit(help_text, (3*self.screen.get_width()/5, 20))
+        
