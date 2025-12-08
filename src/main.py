@@ -3,8 +3,10 @@ import pygame, random, math
 import sys, os
 
 from config import *
+from scenes import mainMenu, gameScreen, pauseMenu, gameOver, settingScreen, statsScreen
 from scenes import mainMenu, gameScreen, pauseMenu, gameOver, shopScreen
 from managers.screenManager import screenManager
+from managers.secure_save import SecureSaveManager
 from scenes.shopScreen import shopScreen
 
 
@@ -16,6 +18,12 @@ class Game:
         
         # khai báo quản lý các màn hình Screen manager
         self.screen_manager = screenManager(self)
+
+        self.save_manager = SecureSaveManager(self)
+        print("SecureSaveManager đã được khởi tạo")
+        # load save, nếu chưa có ở máy thì tạo
+        self.settings = self.save_manager.load_settings()
+        self.stats = self.save_manager.load_stats()
         
         # Đăng ký tất cả screens
         self.screen_manager.register_screen("main_menu", mainMenu)
@@ -23,6 +31,8 @@ class Game:
         self.screen_manager.register_screen("shop", shopScreen)
         self.screen_manager.register_screen("pause", pauseMenu)
         self.screen_manager.register_screen("game_over", gameOver)
+        self.screen_manager.register_screen("settings", settingScreen)
+        self.screen_manager.register_screen("stats", statsScreen)
         
         # Bắt đầu với main menu
         self.screen_manager.switch_to("main_menu")
