@@ -82,7 +82,6 @@ class statsScreen(baseScreen):
                             # Lưu lại
                             self.game.save_manager.save_stats(new_stats)
                             self.stats = new_stats
-                            print("Đã reset stats (giữ coin)")
     
     def update(self):
         mouse_pos = pygame.mouse.get_pos()

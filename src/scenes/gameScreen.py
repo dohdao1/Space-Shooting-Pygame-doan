@@ -16,10 +16,18 @@ class gameScreen(baseScreen):
         self.font = pygame.font.SysFont('arial', 32)
         self.font_suggest = pygame.font.SysFont('arial', 20)
 
+        # Thoonh tin cần lưu
+        self.game_start_time = pygame.time.get_ticks()
+        self.play_time = 0  # thời gian chơi tính bằng giây
+        self.total_kills = 0  # số asteroid đã tiêu diệt
+
         # reset game state khi khởi tạo màn hình
         self.reset_game_state()
 
     def reset_game_state(self):
+        self.game_start_time = pygame.time.get_ticks()
+        self.play_time = 0
+        self.total_kills = 0
         self.score = 0
         self.lives = 3
         self.is_paused = False
@@ -52,34 +60,30 @@ class gameScreen(baseScreen):
 
         for event in events:
             if event.type == pygame.QUIT:
+                self.save_current_stats()   # Lưu trước khi thoát
                 self.game.running = False
+
             elif event.type == pygame.KEYDOWN:
                 if event.key in [pygame.K_ESCAPE, pygame.K_p]:
+                    # Lưu thống kê khi pause
+                    self.save_current_stats()                    
                     pygame.mouse.set_visible(True)
                     self.switch_to("pause")
                 elif event.key == pygame.K_l:
                     self.lives = 0
-                elif event.key == pygame.K_t:
-                    self.score += 10
-                elif event.key == pygame.K_y:
-                    self.lives -= 1
 
             elif event.type == pygame.MOUSEBUTTONDOWN:
                 if event.button == 1:
                     mouse_pos = pygame.mouse.get_pos()
-                    if self.score_button.collidepoint(mouse_pos):
-                        self.score += 1
-                    life_button = pygame.Rect(10, 240, 100, 50)
-                    if life_button.collidepoint(mouse_pos) and self.lives > 0:
-                        self.lives -= 1
  
-
-
     def update(self):
         if self.is_paused:
             return
 
         dt = self.game.clock.get_time()/1000.0
+
+        # Cập nhật thời gian chơi
+        self.play_time = (pygame.time.get_ticks() - self.game_start_time) / 1000.0
 
         # lấy phím nhấn hiện tại
         keys = pygame.key.get_pressed()
@@ -106,6 +110,9 @@ class gameScreen(baseScreen):
 
         # kiểm tra thua
         if self.lives <= 0:
+            # Gọi hàm lưu vào save
+            self.game_over()
+
             self.game.game_over_data = {"score": self.score}
             pygame.mouse.set_visible(True)
             self.switch_to("game_over", self.score)
@@ -132,23 +139,37 @@ class gameScreen(baseScreen):
         lives_text = self.font.render(f"LIVES: {self.lives}", True, (255, 50, 50))
         self.screen.blit(lives_text, (20, 60))
 
-        # nút cộng điểm
-        button_color = (100, 200, 100) if self.button_hover else (70, 170, 70)
-        pygame.draw.rect(self.screen, button_color, self.score_button, border_radius=8)
-        pygame.draw.rect(self.screen, (255, 255, 255), self.score_button, 2, border_radius=8)
-        button_text = self.font_suggest.render("+1 ĐIỂM", True, (255, 255, 255))
-        self.screen.blit(button_text, button_text.get_rect(center=self.score_button.center))
-
-        # nút trừ mạng
-        life_button = pygame.Rect(10, 240, 100, 50)
-        life_hover = life_button.collidepoint(pygame.mouse.get_pos())
-        life_color = (200, 100, 100) if life_hover else (170, 70, 70)
-        pygame.draw.rect(self.screen, life_color, life_button, border_radius=8)
-        pygame.draw.rect(self.screen, (255, 255, 255), life_button, 2, border_radius=8)
-        life_text = self.font_suggest.render("-1 MẠNG", True, (255, 255, 255))
-        self.screen.blit(life_text, life_text.get_rect(center=life_button.center))
-
         # hướng dẫn
         help_text = self.font_suggest.render("ESC/P: Pause Menu | L: Lose(thua ngay)", True, (200, 200, 200))
         self.screen.blit(help_text, (3*self.screen.get_width()/5, 20))
+
+    # Xử lý khi game thua
+    def game_over(self):
+        # Tính coin thưởng dựa trên điểm số
+        coin_reward = self.score // 10  # 1 coin cho mỗi 10 điểm
+        
+        # Cập nhật điểm cao
+        self.game.save_manager.update_high_score(self.score)
+        
+        # Thêm coin vào tài khoản
+        self.game.save_manager.add_coin(coin_reward)
+        
+        # Thêm vào lịch sử game
+        self.game.save_manager.add_game_history(
+            score=self.score,
+            play_time=self.play_time,
+            kills=self.total_kills,
+            deaths=1  # mỗi lần thua tính 1 death
+        )
+        
+        print(f"Game Over! Điểm: {self.score}, Thời gian: {self.play_time:.1f}s, Tiêu diệt: {self.total_kills}, Coin nhận: {coin_reward}")
+
+    # Lưu tạm thời khi pause hoặc thoát game
+    def save_current_stats(self):
+        stats = self.game.save_manager.load_stats()
+        
+        # Cập nhật điểm cao nếu cần
+        if self.score > stats['high_score']:
+            stats['high_score'] = self.score
+            self.game.save_manager.save_stats(stats)
         

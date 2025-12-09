@@ -69,8 +69,6 @@ class settingScreen(baseScreen):
         self.reset_hover = False
         self.show_reset_confirmation = False
         
-        print("SettingScreen initialized with theme system")
-    
     def handle_events(self, events):
         mouse_pos = pygame.mouse.get_pos()
         
@@ -151,8 +149,8 @@ class settingScreen(baseScreen):
                 elif self.sliders['sfx']['dragging']:
                     self.update_slider_value('sfx', mouse_pos[0])
     
+    # Cập nhật giá trị slide
     def update_slider_value(self, slider_name, mouse_x):
-        """Cập nhật giá trị slider"""
         slider = self.sliders[slider_name]
         rect = slider['rect']
         
@@ -172,7 +170,6 @@ class settingScreen(baseScreen):
             self.settings['sfx_volume'] = value
     
     def save_settings(self):
-        """Lưu settings vào SecureSaveManager"""
         try:
             if hasattr(self.game, 'save_manager'):
                 # Chỉ lưu 5 fields cơ bản, không lưu derived colors
@@ -185,10 +182,10 @@ class settingScreen(baseScreen):
                 }
                 
                 success = self.game.save_manager.save_settings(settings_to_save)
-                if success:
-                    print("Settings đã được lưu")
-                else:
-                    print("Không thể lưu settings")
+                # if success:
+                #     print("Settings đã được lưu")
+                # else:
+                #     print("Không thể lưu settings")
             
             # Cập nhật settings trong game object
             self.game.settings = self.settings

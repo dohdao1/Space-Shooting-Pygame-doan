@@ -15,9 +15,7 @@ class mainMenu(baseScreen):
         self.buttons = [
             {"text": "START GAME", "action": "game", "rect": pygame.Rect(0, 0, 300, 50)},
             {"text": "ACHIEVEMENTS", "action": "stats", "rect": pygame.Rect(0, 0, 300, 50)}, # bỏ mịa cái how to đi
-            {"text": "QUIT", "action": "quit", "rect": pygame.Rect(0, 0, 300, 50)},
             {"text": "SHOP", "action": "shop", "rect": pygame.Rect(0, 0, 300, 50)},
-            {"text": "HOW TO PLAY", "action": "howto", "rect": pygame.Rect(0, 0, 300, 50)},
             {"text": "QUIT", "action": "quit", "rect": pygame.Rect(0, 0, 300, 50)}
         ]
         

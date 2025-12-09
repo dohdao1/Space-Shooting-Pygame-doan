@@ -77,21 +77,51 @@ class SecureSaveManager:
     
     # Giải mã data
     def _decrypt(self, encrypted_str):
-        try:
+        try:            
+            # Kiểm tra base64
             encrypted = base64.b64decode(encrypted_str.encode('ascii'))
+            
             decrypted = self.cipher.decrypt(encrypted)
-            return json.loads(decrypted.decode('utf-8'))
+            
+            result = json.loads(decrypted.decode('utf-8'))
+            return result
         except Exception as e:
+            print(f"LỖI GIẢI MÃ: {e}")
+            import traceback
+            traceback.print_exc()
             return None
     
     # Kiểm tra xem có bị sửa hay không(thường ae hay cheat bằng phần mềm ngoài rồi lưu lại kk)
     def _add_hash(self, data):
         data_copy = data.copy()
-        data_str = json.dumps(data_copy, sort_keys=True, separators=(',', ':'))
+    
+        # LÀM TRÒN CÁC SỐ FLOAT ĐỂ NHẤT QUÁN
+        data_copy = self._normalize_floats(data_copy)
+        
+        data_str = json.dumps(
+            data_copy, 
+            sort_keys=True, 
+            separators=(',', ':'),
+            ensure_ascii=False
+        )
+        
         data_hash = hashlib.sha256(data_str.encode()).hexdigest()
         data_copy['_hash'] = data_hash
+        
         return data_copy
     
+    # Làm tròn float
+    def _normalize_floats(self, obj):
+        if isinstance(obj, float):
+            # Làm tròn đến 3 chữ số thập phân
+            return round(obj, 3)
+        elif isinstance(obj, dict):
+            return {k: self._normalize_floats(v) for k, v in obj.items()}
+        elif isinstance(obj, list):
+            return [self._normalize_floats(item) for item in obj]
+        else:
+            return obj
+
     # Kiểm tra hash
     def _verify_hash(self, data):
         if '_hash' not in data:
@@ -100,8 +130,18 @@ class SecureSaveManager:
         saved_hash = data['_hash']
         data_copy = data.copy()
         del data_copy['_hash']
-        data_str = json.dumps(data_copy, sort_keys=True, separators=(',', ':'))
+        
+        data_copy = self._normalize_floats(data_copy)
+        
+        data_str = json.dumps(
+            data_copy, 
+            sort_keys=True, 
+            separators=(',', ':'),
+            ensure_ascii=False
+        )
+        
         calculated_hash = hashlib.sha256(data_str.encode()).hexdigest()
+                
         return saved_hash == calculated_hash
     
     # ===================================================================#
@@ -256,16 +296,23 @@ class SecureSaveManager:
     
     # Lưu thành tích
     def save_stats(self, stats):
-        try:
+        try:            
             stats_with_hash = self._add_hash(stats)
-            encrypted = self._encrypt(stats_with_hash)
             
+            encrypted = self._encrypt(stats_with_hash)
+                        
             with open(self.stats_path, 'w', encoding='utf-8') as f:
                 f.write(encrypted)
+                        
+            if os.path.exists(self.stats_path):
+                with open(self.stats_path, 'r', encoding='utf-8') as f:
+                    content = f.read()
             
             return True
         except Exception as e:
             print(f"Lỗi trong quá trình lưu: {e}")
+            import traceback
+            traceback.print_exc()
             return False
     
     # Load thành tích người chơi
@@ -283,7 +330,7 @@ class SecureSaveManager:
             # Coin( hệ thống tiền tệ riêng trong game)
             'coin' : 0
         }
-        
+                
         if not os.path.exists(self.stats_path):
             return default_stats
         
@@ -293,17 +340,28 @@ class SecureSaveManager:
             
             decrypted = self._decrypt(encrypted)
             
-            if decrypted and self._verify_hash(decrypted):
-                # Merge với defaults
-                merged = default_stats.copy()
-                for key, value in decrypted.items():
-                    merged[key] = value
+            if decrypted:                
+                hash_valid = self._verify_hash(decrypted)
                 
-                return merged
+                if hash_valid:
+                    if '_hash' in decrypted:
+                        del decrypted['_hash']
+                    
+                    merged = default_stats.copy()  # Bắt đầu từ default
+                    
+                    for key, value in decrypted.items():
+                        merged[key] = value
+                    
+                    return merged
+                else:
+                    return default_stats
             else:
                 return default_stats
+                
         except Exception as e:
-            print(f"Lỗi load thành tựu game: {e}")
+            print(f"LỖI LOAD THÀNH TỰU GAME: {e}")
+            import traceback
+            traceback.print_exc()
             return default_stats
         
     # Cập nhật điểm cao
@@ -312,6 +370,7 @@ class SecureSaveManager:
         
         if score > stats['high_score']:
             stats['high_score'] = score
+            success = self.save_stats(stats)
             self.save_stats(stats)
             return True
         
@@ -340,7 +399,7 @@ class SecureSaveManager:
         stats['total_deaths'] += deaths
         
         self.save_stats(stats)
-    
+        
     # Thêm coin đơn giản
     def add_coin(self, amount):
         stats = self.load_stats()
