@@ -9,12 +9,12 @@ class screenManager:
     # đăng ký 1 screen mới, dùng lúc khởi tạo
     def register_screen(self, name, screen_class):
         self.screens[name] = screen_class(self.game)
-        print(f"Đăng ký screen: {name}")
+        # print(f"Đăng ký screen: {name}")
     
     # chuyển màn hình
     def switch_to(self, screen_name, data=None):
         if screen_name not in self.screens:
-            print(f"ERROR: Không tìm dc '{screen_name}'!")
+            # print(f"ERROR: Không tìm dc '{screen_name}'!")
             return
         
         # Nếu chuyển về game, reset game state
@@ -33,7 +33,7 @@ class screenManager:
         
         # Chuyển scene
         self.current_screen = screen_name
-        print(f"Chuyển qua: {screen_name} data hiện có là: {data}")
+        # print(f"Chuyển qua: {screen_name} data hiện có là: {data}")
         
     # Quay lại màn hình trước, chắc ít dùng =)))
     def go_back(self):

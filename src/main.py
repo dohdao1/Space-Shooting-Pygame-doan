@@ -20,10 +20,10 @@ class Game:
         self.screen_manager = screenManager(self)
 
         self.save_manager = SecureSaveManager(self)
-        print("SecureSaveManager đã được khởi tạo")
         # load save, nếu chưa có ở máy thì tạo
         self.settings = self.save_manager.load_settings()
         self.stats = self.save_manager.load_stats()
+        print(self.stats)
         
         # Đăng ký tất cả screens
         self.screen_manager.register_screen("main_menu", mainMenu)

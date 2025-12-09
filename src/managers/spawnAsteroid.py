@@ -50,7 +50,8 @@ class AsteroidSpawner:
                     self.hit_particles.add(particle)
                 if status == "dead":
                     if game_screen:
-                        game_screen.score += 10
+                        game_screen.score += 10     # này sau cập nhật cho từng thiên tạch cụ thể nha
+                        game_screen.total_kills += 1    # Cập nhật điểm kill để lưu vào save
                     explosion = Explosion(asteroid.rect.centerx, asteroid.rect.centery)
                     self.explosions.add(explosion)
 

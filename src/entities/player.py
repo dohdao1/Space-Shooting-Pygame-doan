@@ -1,5 +1,5 @@
 import pygame
-from .bullet import Bullet, FastBullet, DiagonalBullet
+from .bullet import Bullet
 
 class Player(pygame.sprite.Sprite):
     def __init__(self, x, y, speed=6):
