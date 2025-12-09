@@ -78,6 +78,7 @@ class settingScreen(baseScreen):
             
             elif event.type == pygame.KEYDOWN:
                 if event.key == pygame.K_ESCAPE:
+                    self.game.audio_manager.play_sound("shooter_sfx", volume_scale=0.3)
                     if self.show_reset_confirmation:
                         self.show_reset_confirmation = False
                     else:
@@ -86,6 +87,7 @@ class settingScreen(baseScreen):
             
             elif event.type == pygame.MOUSEBUTTONDOWN:
                 if event.button == 1:  # Chuột trái
+                    self.game.audio_manager.play_sound("shooter_sfx", volume_scale=0.3)
                     # Nếu đang show confirmation dialog
                     if self.show_reset_confirmation:
                         yes_btn, no_btn = self.show_reset_confirmation_dialog()

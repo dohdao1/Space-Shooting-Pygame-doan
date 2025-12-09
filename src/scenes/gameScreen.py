@@ -66,7 +66,9 @@ class gameScreen(baseScreen):
             elif event.type == pygame.KEYDOWN:
                 if event.key in [pygame.K_ESCAPE, pygame.K_p]:
                     # Lưu thống kê khi pause
-                    self.save_current_stats()                    
+                    self.save_current_stats()
+                    # dừng nhạc nền
+                    self.game.audio_manager.pause_music()
                     pygame.mouse.set_visible(True)
                     self.switch_to("pause")
                 elif event.key == pygame.K_l:
@@ -161,8 +163,9 @@ class gameScreen(baseScreen):
             kills=self.total_kills,
             deaths=1  # mỗi lần thua tính 1 death
         )
-        
-        print(f"Game Over! Điểm: {self.score}, Thời gian: {self.play_time:.1f}s, Tiêu diệt: {self.total_kills}, Coin nhận: {coin_reward}")
+
+        self.game.audio_manager.stop_music()
+
 
     # Lưu tạm thời khi pause hoặc thoát game
     def save_current_stats(self):

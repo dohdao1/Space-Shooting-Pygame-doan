@@ -5,10 +5,8 @@ import sys, os
 from config import *
 from scenes import mainMenu, gameScreen, pauseMenu, gameOver, settingScreen, statsScreen
 from scenes import mainMenu, gameScreen, pauseMenu, gameOver, shopScreen
-from managers.screenManager import screenManager
-from managers.secure_save import SecureSaveManager
+from managers import screenManager, SecureSaveManager, audioManager
 from scenes.shopScreen import shopScreen
-
 
 class Game:
     def __init__(self):
@@ -23,7 +21,8 @@ class Game:
         # load save, nếu chưa có ở máy thì tạo
         self.settings = self.save_manager.load_settings()
         self.stats = self.save_manager.load_stats()
-        print(self.stats)
+
+        self.audio_manager = audioManager(self.save_manager)
         
         # Đăng ký tất cả screens
         self.screen_manager.register_screen("main_menu", mainMenu)
@@ -36,10 +35,21 @@ class Game:
         
         # Bắt đầu với main menu
         self.screen_manager.switch_to("main_menu")
+
+        # bật nhạc nền luôn
+        self.audio_manager.play_music("menu")
         
         # Game state
         self.running = True
         self.clock = pygame.time.Clock()
+
+    def handle_button_click(self, button_action):
+        # Phát âm thanh SFX khi click
+        if hasattr(self, 'audio_manager'):
+            self.audio_manager.play_sound("shooter_sfx", volume_scale=0.3)
+        
+        # Trả về action để xử lý tiếp
+        return button_action
     
     def run(self):
         while self.running:
