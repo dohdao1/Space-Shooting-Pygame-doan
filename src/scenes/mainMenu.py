@@ -1,7 +1,6 @@
 #Màn hình chính hiển thị bắt khi mở game
 import pygame
 from .baseScreen import baseScreen
-from managers import SecureSaveManager
 from config import *
 
 class mainMenu(baseScreen):
@@ -28,60 +27,10 @@ class mainMenu(baseScreen):
         # nút bánh răng cài đặt (40x40)
         self.gear_button = pygame.Rect(self.screen.get_width() - 60, 20, 40, 40)
         self.gear_hover = False
-        
-        # Tải settings từ SecureSaveManager
-        self.load_settings_from_save()
 
-        # Lấy stats để hiển thị TRỰC TIẾP
-        self.game_stats = self.load_stats_from_save()
-    
-    # lấy thông tin save cài đặt từ save
-    def load_settings_from_save(self):
-        if hasattr(self.game, 'save_manager'):
-            try:
-                saved_settings = self.game.save_manager.load_settings()
-
-                # Merge với defaults để đảm bảo có đủ keys
-                default_settings = self.get_default_settings()
-                merged_settings = default_settings.copy()
-                
-                for key, value in saved_settings.items():
-                    if key not in ['_hash']:  # Bỏ qua hash key
-                        merged_settings[key] = value
-                
-                self.game.settings = merged_settings
-                return merged_settings
-            except Exception as e:
-                print(f"Lỗi tải settings: {e}")
-                default_settings = self.get_default_settings()
-                self.game.settings = default_settings
-                return default_settings
-        else:
-            print("Không tìm thấy save_manager, dùng settings mặc định")
-            default_settings = self.get_default_settings()
-            self.game.settings = default_settings
-            return default_settings
-    
-    # setting mặc định
-    def get_default_settings(self):
-        return {
-            'music_volume': 0.5,
-            'sfx_volume': 0.7,
-            'music_enabled': True,
-            'sfx_enabled': True,
-            'theme': 'dark'
-        }
-    
-    # load từ save
-    def load_stats_from_save(self):
-        if hasattr(self.game, 'save_manager'):
-            try:
-                stats = self.game.save_manager.load_stats()
-                return stats
-            except Exception as e:
-                print(f" Lỗi tải stats: {e}")
-                return None
-        return None
+        # chạy nhạc
+        if hasattr(game, 'audio_manager'):
+            game.audio_manager.play_music("menu")
     
     def handle_events(self, events):
         for event in events:
@@ -89,28 +38,28 @@ class mainMenu(baseScreen):
                 self.game.running = False
             elif event.type == pygame.KEYDOWN:
                 if event.key == pygame.K_ESCAPE:
+                    self.game.audio_manager.play_sound("shooter_sfx", volume_scale=0.3)
                     self.game.running = False
-                elif event.key == pygame.K_RETURN or event.key == pygame.K_SPACE:
-                    self.switch_to("game")
-                elif event.key == pygame.K_s:  # Phím tắt để mở Settings
-                    self.switch_to("settings")
+
             elif event.type == pygame.MOUSEBUTTONDOWN:
                 if event.button == 1:  # Click chuột trái
                     mouse_pos = pygame.mouse.get_pos()
 
                     # Kiểm tra nút bánh răng
                     if self.gear_button.collidepoint(mouse_pos):
+                        self.game.audio_manager.play_sound("shooter_sfx", volume_scale=0.3)
                         self.switch_to("settings")
-                        return
-                
-                    elif self.gear_button.collidepoint(mouse_pos):
-                        self.switch_to("stats")
                         return
                     
                     for button in self.buttons:
                         if button["rect"].collidepoint(mouse_pos):
+                            self.game.audio_manager.play_sound("shooter_sfx", volume_scale=0.3)
                             if button["action"] == "game":
                                 self.switch_to("game")
+                                # bật âm thanh
+                                self.game.audio_manager.stop_music()
+                                self.game.audio_manager.play_music("gameplay")
+
                             elif button["action"] == "stats":
                                 self.switch_to("stats")
                             elif button["action"] == "shop":
@@ -126,7 +75,7 @@ class mainMenu(baseScreen):
 
         # Hiệu ứng hover cho nút bánh răng
         self.gear_hover = self.gear_button.collidepoint(mouse_pos)
-    
+
     def draw(self):
         # Nền
         bg_color = self.game.settings.get('bg_color', BLACK)

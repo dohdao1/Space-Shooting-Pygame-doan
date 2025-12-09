@@ -28,6 +28,7 @@ class gameOver(baseScreen):
     def handle_events(self, events):
         for event in events:
             if event.type == pygame.KEYDOWN:
+                self.game.audio_manager.play_sound("shooter_sfx", volume_scale=0.3)
                 if event.key == pygame.K_RETURN:
                     self.switch_to("game")
                 elif event.key == pygame.K_ESCAPE:
@@ -35,6 +36,7 @@ class gameOver(baseScreen):
             
             elif event.type == pygame.MOUSEBUTTONDOWN:
                 if event.button == 1:
+                    self.game.audio_manager.play_sound("shooter_sfx", volume_scale=0.3)
                     mouse_pos = pygame.mouse.get_pos()
                     for button in self.buttons:
                         if button["rect"].collidepoint(mouse_pos):
