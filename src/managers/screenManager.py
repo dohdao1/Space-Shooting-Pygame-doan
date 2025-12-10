@@ -21,6 +21,11 @@ class screenManager:
         if screen_name == "game" and hasattr(self.screens[screen_name], 'reset_game_state'):
             self.screens[screen_name].reset_game_state()
         
+        # Gọi on_enter() của màn hình mới
+        new_screen = self.screens[screen_name]
+        if hasattr(new_screen, 'on_enter'):
+            new_screen.on_enter()
+            
         # Lưu scene hiện tại
         if self.current_screen:
             self.previous_screen = self.current_screen

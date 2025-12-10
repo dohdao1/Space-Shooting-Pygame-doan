@@ -114,6 +114,9 @@ class gameScreen(baseScreen):
         if self.lives <= 0:
             # Gọi hàm lưu vào save
             self.game_over()
+            # Chạy âm thanh thua
+            self.game.audio_manager.stop_music()
+            self.game.audio_manager.play_sound("lose")
 
             self.game.game_over_data = {"score": self.score}
             pygame.mouse.set_visible(True)

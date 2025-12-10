@@ -28,9 +28,23 @@ class mainMenu(baseScreen):
         self.gear_button = pygame.Rect(self.screen.get_width() - 60, 20, 40, 40)
         self.gear_hover = False
 
-        # chạy nhạc
-        if hasattr(game, 'audio_manager'):
-            game.audio_manager.play_music("menu")
+    def on_enter(self):
+        # load setting
+        if hasattr(self.game, 'save_manager'):
+            # Load settings mới nhất từ file
+            new_settings = self.game.save_manager.load_settings()
+            
+            # Cập nhật settings trong game
+            self.game.settings = new_settings
+            
+            # Cập nhật audio manager với settings mới
+            if hasattr(self.game, 'audio_manager'):
+                self.game.audio_manager.load_settings()
+        
+        # xử lý âm thanh
+        if hasattr(self.game, 'audio_manager'):
+            if (not self.game.audio_manager.is_music_playing() or self.game.audio_manager.current_music != "menu"):
+                self.game.audio_manager.play_music("menu")
     
     def handle_events(self, events):
         for event in events:
@@ -57,7 +71,6 @@ class mainMenu(baseScreen):
                             if button["action"] == "game":
                                 self.switch_to("game")
                                 # bật âm thanh
-                                self.game.audio_manager.stop_music()
                                 self.game.audio_manager.play_music("gameplay")
 
                             elif button["action"] == "stats":
