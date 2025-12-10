@@ -7,33 +7,11 @@ class statsScreen(baseScreen):
     def __init__(self, game):
         super().__init__(game)
         
-        # Lấy stats từ save_manager
-        if hasattr(game, 'save_manager'):
-            self.stats = game.save_manager.load_stats()
-        else:
-            # không có data thì tạo
-            self.stats = {
-                'high_score': 0,
-                'total_games': 0,
-                'total_play_time': 0,
-                'total_kills': 0,
-                'total_deaths': 0,
-                'game_history': [],
-                'coin': 0
-            }
-
-        # Tải settings từ SecureSaveManager và map theme
-        if hasattr(game, 'save_manager'):
-            raw_settings = game.save_manager.load_settings()
-            self.settings = update_settings_with_theme(raw_settings)
-        else:
-            # Fallback
-            from utils.map_color import get_default_settings
-            self.settings = get_default_settings()
-                
-        # Theme hiện tại
-        self.selected_theme = self.settings.get('theme', 'dark')
-        self.theme_info = get_theme(self.selected_theme)
+        # Khởi tạo các thông số cơ bản
+        self.stats = {}
+        self.settings = {}
+        self.selected_theme = 'dark'
+        self.theme_info = {}
         
         # Font
         self.font_title = pygame.font.SysFont('arial', 48, bold=True)
@@ -46,7 +24,16 @@ class statsScreen(baseScreen):
         self.reset_button = pygame.Rect(450, 500, 150, 50)
         self.back_hover = False
         self.reset_hover = False
-    
+
+    def on_enter(self):
+        # load stats lại từ save
+        if hasattr(self.game, 'save_manager'):
+            self.stats = self.game.save_manager.load_stats()
+            raw_settings = self.game.save_manager.load_settings()
+            self.settings = update_settings_with_theme(raw_settings)
+            self.selected_theme = self.settings.get('theme', 'dark')
+            self.theme_info = get_theme(self.selected_theme)
+            
     def handle_events(self, events):
         mouse_pos = pygame.mouse.get_pos()
         
@@ -228,46 +215,46 @@ class statsScreen(baseScreen):
         high_score = self.stats.get('high_score', 0)
         total_games = self.stats.get('total_games', 0)
         total_kills = self.stats.get('total_kills', 0)
+        coin = self.stats.get('coin', 0)
         
         # Số điểm
         if high_score >= 1000:
-            achievements["Score Master"] = "⭐⭐⭐"
+            achievements["Score Master"] = "f{high_score} [MAX]"
         elif high_score >= 500:
-            achievements["Score Expert"] = "⭐⭐"
+            achievements["Score Expert"] = "f{high_score} [PRO]"
         elif high_score >= 100:
-            achievements["Score Beginner"] = "⭐"
+            achievements["Score Beginner"] = "f{high_score} [NEW]"
         else:
-            achievements["Score Beginner"] = "0/100"
+            achievements["Score"] = f"{high_score}/100"
         
-        # só lượng game chơi
+        # Số game
         if total_games >= 50:
-            achievements["Veteran Player"] = "⭐⭐⭐"
+            achievements["Veteran"] = "f{total_games} [Nghiện]"
         elif total_games >= 20:
-            achievements["Regular Player"] = "⭐⭐"
+            achievements["Regular"] = "f{total_games} [Chạm cỏ đi]"
         elif total_games >= 5:
-            achievements["Casual Player"] = "⭐"
+            achievements["Casual"] = "f{total_games} [Vừa vừa thôi ní]"
         else:
-            achievements["Casual Player"] = f"{total_games}/5"
+            achievements["Games"] = f"{total_games}/5"
         
-        # Tổng lượn bắn hạ
+        # Kills
         if total_kills >= 1000:
-            achievements["Killing Machine"] = "⭐⭐⭐"
+            achievements["Killer"] = f"{total_kills}"
         elif total_kills >= 500:
-            achievements["Skilled Hunter"] = "⭐⭐"
+            achievements["Hunter"] = f"{total_kills}"
         elif total_kills >= 100:
-            achievements["Novice Hunter"] = "⭐"
+            achievements["Shooter"] = f"{total_kills}"
         else:
-            achievements["Novice Hunter"] = f"{total_kills}/100"
+            achievements["Kills"] = f"{total_kills}/100"
         
-        # Tính coin sưu tập
-        coin = self.stats.get('coin', 0)
+        # Coin
         if coin >= 10000:
-            achievements["Millionaire"] = "💰💰💰"
+            achievements["Rich"] = f"{coin}[$$$]"
         elif coin >= 5000:
-            achievements["Rich"] = "💰💰"
+            achievements["Wealthy"] = f"{coin}[$$]"
         elif coin >= 1000:
-            achievements["Wealthy"] = "💰"
+            achievements["Money"] = f"{coin}[$]"
         else:
-            achievements["Wealthy"] = f"{coin}/1000"
+            achievements["Coins"] = f"{coin}/1000"
         
         return achievements

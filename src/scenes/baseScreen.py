@@ -9,6 +9,10 @@ class baseScreen:
     # lấy các dữ liệu vào màn hình này, có thể là điểm người chơi,.. để tránh mất mát dữ liệu
     def set_data(self, data):
         self.screen_data = data
+
+    # cái củ lìn này làm để gọi load lại màn dm
+    def on_enter(self):
+        pass
     
     # xử lý các sự kiên
     def handle_events(self, events):

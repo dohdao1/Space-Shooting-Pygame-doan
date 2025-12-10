@@ -35,21 +35,10 @@ class Game:
         
         # Bắt đầu với main menu
         self.screen_manager.switch_to("main_menu")
-
-        # bật nhạc nền luôn
-        self.audio_manager.play_music("menu")
         
         # Game state
         self.running = True
         self.clock = pygame.time.Clock()
-
-    def handle_button_click(self, button_action):
-        # Phát âm thanh SFX khi click
-        if hasattr(self, 'audio_manager'):
-            self.audio_manager.play_sound("shooter_sfx", volume_scale=0.3)
-        
-        # Trả về action để xử lý tiếp
-        return button_action
     
     def run(self):
         while self.running:
