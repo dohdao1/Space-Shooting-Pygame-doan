@@ -13,9 +13,10 @@ class AsteroidSpawner:
         self.hit_particles = pygame.sprite.Group()
         self.explosions = pygame.sprite.Group()
         self.difficulty = 1.0
-        self.difficulty_growth = 0.001  # mỗi giây tăng difficulty
+        self.difficulty_growth = 0.005  # mỗi giây tăng difficulty
+        self.stop_spawn = False
 
-    # ---------------------------------------------------------
+
     def update(self, dt):
         # tăng difficulty theo thời gian
         self.difficulty += self.difficulty_growth * dt
@@ -27,6 +28,9 @@ class AsteroidSpawner:
             self.try_spawn()
             # spawn interval biến thiên ngẫu nhiên
             self.spawn_interval = random.randint(1000, 1200)
+        if self.stop_spawn:
+            return
+
             
 
         # update tất cả asteroid

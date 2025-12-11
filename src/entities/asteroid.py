@@ -10,9 +10,9 @@ class AsteroidType(Enum):
     LARGE = 3
 
 ASTEROID_STATS = {
-    AsteroidType.SMALL:  {"hp": 2, "speed": (28), "img": "assets/images/asteroid/small_asteroid.png"},
-    AsteroidType.MEDIUM: {"hp": 3, "speed": (25), "img": "assets/images/asteroid/medium_asteroid.png"},
-    AsteroidType.LARGE:  {"hp": 4, "speed": (22), "img": "assets/images/asteroid/large_asteroid.png"},
+    AsteroidType.SMALL:  {"hp": 2, "speed": (28), "img": "../assets/images/asteroid/small_asteroid.png"},
+    AsteroidType.MEDIUM: {"hp": 3, "speed": (25), "img": "../assets/images/asteroid/medium_asteroid.png"},
+    AsteroidType.LARGE:  {"hp": 4, "speed": (25), "img": "../assets/images/asteroid/large_asteroid.png"},
 }
 
 class Asteroid(pygame.sprite.Sprite):
@@ -66,6 +66,7 @@ class Asteroid(pygame.sprite.Sprite):
             self.active = False
             self.kill()
             return "dead"
+        
         return "hit"
 
     # -----------------------------------------------------

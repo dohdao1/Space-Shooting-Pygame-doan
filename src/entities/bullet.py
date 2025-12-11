@@ -8,8 +8,9 @@ class Bullet(pygame.sprite.Sprite):
         self.image.fill((255, 255, 0))
         self.rect = self.image.get_rect(center=(x, y))
         self.speed = speed
+        self.damage = 20
 
-    def update(self):
+    def update(self,dt):
         self.rect.y -= self.speed
         if self.rect.bottom < 0:
             self.kill()
