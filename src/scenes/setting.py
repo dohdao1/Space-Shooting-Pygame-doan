@@ -7,15 +7,10 @@ class settingScreen(baseScreen):
     def __init__(self, game):
         super().__init__(game)
         
-        # Tải settings từ SecureSaveManager và map theme
-        if hasattr(game, 'save_manager'):
-            raw_settings = game.save_manager.load_settings()
-            # MAP THEME -> MÀU SẮC
-            self.settings = update_settings_with_theme(raw_settings)
-        else:
-            # Fallback
-            from utils.map_color import get_default_settings
-            self.settings = get_default_settings()
+        # Khởi tạo
+        self.settings = {}
+        self.selected_theme = 'dark'
+        self.theme_info = {}
         
         # Font
         self.font_title = pygame.font.SysFont('arial', 48, bold=True)
@@ -35,11 +30,7 @@ class settingScreen(baseScreen):
                 'dragging': False
             }
         }
-        
-        # Theme hiện tại
-        self.selected_theme = self.settings.get('theme', 'dark')
-        self.theme_info = get_theme(self.selected_theme)
-        
+
         # Radio button cho theme
         self.theme_buttons = [
             {"name": "Dark", "value": "dark", "rect": pygame.Rect(300, 290, 200, 40)},
@@ -57,20 +48,29 @@ class settingScreen(baseScreen):
         self.music_checkbox = pygame.Rect(570, 160, 20, 20)
         self.sfx_checkbox = pygame.Rect(570, 230, 20, 20)
         
-        # Cập nhật nhạc ngay lập tức
-        music_enabled = self.settings.get('music_enabled', True)
-        if music_enabled:
-            pygame.mixer.music.set_volume(self.settings.get('music_volume', 0.5))
-        else:
-            pygame.mixer.music.set_volume(0)
-        
         # Biến trạng thái
         self.back_hover = False
         self.reset_hover = False
         self.show_reset_confirmation = False
+
+    def on_enter(self):
+        if hasattr(self.game, 'save_manager'):
+            raw_settings = self.game.save_manager.load_settings()
+            self.settings = update_settings_with_theme(raw_settings)
+            
+            # Cập nhật slider values từ settings
+            self.sliders['music']['value'] = self.settings.get('music_volume', 0.5)
+            self.sliders['sfx']['value'] = self.settings.get('sfx_volume', 0.7)
+            
+            # Cập nhật theme
+            self.selected_theme = self.settings.get('theme', 'dark')
+            self.theme_info = get_theme(self.selected_theme)
+            
+            if self.settings.get('music_enabled', True):
+                pygame.mixer.music.set_volume(self.settings.get('music_volume', 0.5))
+            else:
+                pygame.mixer.music.set_volume(0)
         
-        print("SettingScreen initialized with theme system")
-    
     def handle_events(self, events):
         mouse_pos = pygame.mouse.get_pos()
         
@@ -80,6 +80,7 @@ class settingScreen(baseScreen):
             
             elif event.type == pygame.KEYDOWN:
                 if event.key == pygame.K_ESCAPE:
+                    self.game.audio_manager.play_sound("shooter_sfx", volume_scale=0.3)
                     if self.show_reset_confirmation:
                         self.show_reset_confirmation = False
                     else:
@@ -93,10 +94,12 @@ class settingScreen(baseScreen):
                         yes_btn, no_btn = self.show_reset_confirmation_dialog()
                         if yes_btn.collidepoint(mouse_pos):
                             if hasattr(self.game, 'save_manager'):
+                                self.game.audio_manager.play_sound("shooter_sfx", volume_scale=0.3)
                                 self.game.save_manager.reset_all_data()
                                 print("Đã reset tất cả dữ liệu")
                             self.show_reset_confirmation = False
                         elif no_btn.collidepoint(mouse_pos):
+                            self.game.audio_manager.play_sound("shooter_sfx", volume_scale=0.3)
                             self.show_reset_confirmation = False
                         return
                     
@@ -109,31 +112,36 @@ class settingScreen(baseScreen):
                     elif self.sliders['sfx']['rect'].collidepoint(mouse_pos):
                         self.sliders['sfx']['dragging'] = True
                         self.update_slider_value('sfx', mouse_pos[0])
-                    
-                    # Kiểm tra checkbox âm nhạc
+
+                    # check box music
                     elif self.music_checkbox.collidepoint(mouse_pos):
-                        self.settings['music_enabled'] = not self.settings.get('music_enabled', True)
-                        if not self.settings['music_enabled']:
-                            pygame.mixer.music.set_volume(0)
-                        else:
-                            pygame.mixer.music.set_volume(self.settings['music_volume'])
+                        new_state = not self.settings.get('music_enabled', True)
+                        self.settings['music_enabled'] = new_state
+                        #cập nhật luôn
+                        self.game.audio_manager.toggle_music(new_state)
                     
-                    # Kiểm tra checkbox hiệu ứng
+                    # Kiểm tra checkbox sfx
                     elif self.sfx_checkbox.collidepoint(mouse_pos):
-                        self.settings['sfx_enabled'] = not self.settings.get('sfx_enabled', True)
+                        new_state = not self.settings.get('sfx_enabled', True)
+                        self.settings['sfx_enabled'] = new_state
+                        #cập nhật luôn
+                        self.game.audio_manager.toggle_sfx(new_state)
                     
                     # Kiểm tra nút Back
                     elif self.back_button.collidepoint(mouse_pos):
+                        self.game.audio_manager.play_sound("shooter_sfx", volume_scale=0.3)
                         self.save_settings()
                         self.switch_to("main_menu")
                     
                     # Kiểm tra nút Reset Data
                     elif self.reset_button.collidepoint(mouse_pos):
+                        self.game.audio_manager.play_sound("shooter_sfx", volume_scale=0.3)
                         self.show_reset_confirmation = True
 
                     # Kiểm tra radio button theme
                     for theme_btn in self.theme_buttons:
                         if theme_btn['rect'].collidepoint(mouse_pos):
+                            self.game.audio_manager.play_sound("shooter_sfx", volume_scale=0.3)
                             self.selected_theme = theme_btn['value']
                             self.settings['theme'] = theme_btn['value']
                             # Update theme info ngay lập tức
@@ -151,8 +159,8 @@ class settingScreen(baseScreen):
                 elif self.sliders['sfx']['dragging']:
                     self.update_slider_value('sfx', mouse_pos[0])
     
+    # Cập nhật giá trị slide
     def update_slider_value(self, slider_name, mouse_x):
-        """Cập nhật giá trị slider"""
         slider = self.sliders[slider_name]
         rect = slider['rect']
         
@@ -172,7 +180,6 @@ class settingScreen(baseScreen):
             self.settings['sfx_volume'] = value
     
     def save_settings(self):
-        """Lưu settings vào SecureSaveManager"""
         try:
             if hasattr(self.game, 'save_manager'):
                 # Chỉ lưu 5 fields cơ bản, không lưu derived colors
@@ -185,10 +192,10 @@ class settingScreen(baseScreen):
                 }
                 
                 success = self.game.save_manager.save_settings(settings_to_save)
-                if success:
-                    print("Settings đã được lưu")
-                else:
-                    print("Không thể lưu settings")
+                # if success:
+                #     print("Settings đã được lưu")
+                # else:
+                #     print("Không thể lưu settings")
             
             # Cập nhật settings trong game object
             self.game.settings = self.settings

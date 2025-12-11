@@ -25,6 +25,9 @@ class gameScreen(baseScreen):
         self.reset_game_state()
 
     def reset_game_state(self):
+        self.game_start_time = pygame.time.get_ticks()
+        self.play_time = 0
+        self.total_kills = 0
         self.score = 0
         self.lives = 3
         self.is_paused = False
@@ -75,9 +78,16 @@ class gameScreen(baseScreen):
 
         for event in events:
             if event.type == pygame.QUIT:
+                self.save_current_stats()   # Lưu trước khi thoát
                 self.game.running = False
+
             elif event.type == pygame.KEYDOWN:
                 if event.key in [pygame.K_ESCAPE, pygame.K_p]:
+                    # Lưu thống kê khi pause
+                    self.save_current_stats()
+                    # dừng nhạc nền
+                    self.game.audio_manager.pause_music()
+                    pygame.mouse.set_visible(True)
                     self.switch_to("pause")
                 elif event.key == pygame.K_l:
                     self.lives = 0
@@ -88,12 +98,7 @@ class gameScreen(baseScreen):
             elif event.type == pygame.MOUSEBUTTONDOWN:
                 if event.button == 1:
                     mouse_pos = pygame.mouse.get_pos()
-                    if self.score_button.collidepoint(mouse_pos):
-                        self.score += 1
-                    life_button = pygame.Rect(10, 240, 100, 50)
-                    if life_button.collidepoint(mouse_pos) and self.lives > 0:
-                        self.lives -= 1
-
+ 
     def update(self):
         if self.is_paused:
             return
@@ -179,7 +184,14 @@ class gameScreen(baseScreen):
 
         # check lose
         if self.lives <= 0:
+            # Gọi hàm lưu vào save
+            self.game_over()
+            # Chạy âm thanh thua
+            self.game.audio_manager.stop_music()
+            self.game.audio_manager.play_sound("lose")
+
             self.game.game_over_data = {"score": self.score}
+            pygame.mouse.set_visible(True)
             self.switch_to("game_over", self.score)
 
     def draw(self):
@@ -230,3 +242,35 @@ class gameScreen(baseScreen):
         # help
         help_text = self.font_suggest.render("ESC/P: Pause Menu | L: Lose(thua ngay)", True, (200, 200, 200))
         self.screen.blit(help_text, (3*self.screen.get_width()/5, 20))
+
+    # Xử lý khi game thua
+    def game_over(self):
+        # Tính coin thưởng dựa trên điểm số
+        coin_reward = self.score // 10  # 1 coin cho mỗi 10 điểm
+        
+        # Cập nhật điểm cao
+        self.game.save_manager.update_high_score(self.score)
+        
+        # Thêm coin vào tài khoản
+        self.game.save_manager.add_coin(coin_reward)
+        
+        # Thêm vào lịch sử game
+        self.game.save_manager.add_game_history(
+            score=self.score,
+            play_time=self.play_time,
+            kills=self.total_kills,
+            deaths=1  # mỗi lần thua tính 1 death
+        )
+
+        self.game.audio_manager.stop_music()
+
+
+    # Lưu tạm thời khi pause hoặc thoát game
+    def save_current_stats(self):
+        stats = self.game.save_manager.load_stats()
+        
+        # Cập nhật điểm cao nếu cần
+        if self.score > stats['high_score']:
+            stats['high_score'] = self.score
+            self.game.save_manager.save_stats(stats)
+        

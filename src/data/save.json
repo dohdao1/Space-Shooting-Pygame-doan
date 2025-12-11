@@ -1,0 +1,12 @@
+{
+    "gold": 0,
+    "owned_skins": [
+        "default",
+        "sea_eagle",
+        "black_iron",
+        "leviathan_omega",
+        "chaos_phantom",
+        "silver_wing"
+    ],
+    "selected_skin": "silver_wing"
+}
