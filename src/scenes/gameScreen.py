@@ -22,6 +22,17 @@ class gameScreen(baseScreen):
         self.font = pygame.font.SysFont('arial', 32)
         self.font_suggest = pygame.font.SysFont('arial', 20)
 
+        self.heart_img = pygame.image.load("assets/images/ui/heart.png").convert_alpha()
+        self.heart_img = pygame.transform.smoothscale(self.heart_img, (32, 32))
+
+        self.item_icons = {}
+        for name, path in Item.ICONS.items():
+            img = pygame.image.load(path).convert_alpha()
+            img = pygame.transform.smoothscale(img, (35, 35))
+            self.item_icons[name] = img
+
+
+
         # mốc điểm spawn boss
         self.boss_score_milestones = [1000, 2000, 4000]
         
@@ -35,6 +46,7 @@ class gameScreen(baseScreen):
         self.score = 0
         self.lives = 3
         self.is_paused = False
+
 
         self.skin_manager = SkinManager()
         # Player
@@ -277,8 +289,13 @@ class gameScreen(baseScreen):
         score_text = self.font.render(f"SCORE: {self.score}", True, (255, 255, 255))
         self.screen.blit(score_text, (20, 20))
 
-        lives_text = self.font.render(f"LIVES: {self.lives}", True, (255, 50, 50))
-        self.screen.blit(lives_text, (20, 60))
+        # ❤️ Draw lives as hearts (max 5)
+        for i in range(min(self.lives, 5)):
+            self.screen.blit(self.heart_img, (20 + i * 40, 60))
+
+        # ----- ITEM TIMELINE -----
+        self.draw_item_timelines()
+
 
         # # score button
         # button_color = (100, 200, 100) if self.button_hover else (70, 170, 70)
@@ -330,4 +347,49 @@ class gameScreen(baseScreen):
         if self.score > stats['high_score']:
             stats['high_score'] = self.score
             self.game.save_manager.save_stats(stats)
-        
+    
+
+    def draw_item_timelines(self):
+        """
+        Vẽ timeline cho các buff đang chạy: bullet và shield.
+        Bullet ở y=110, shield ở y=140 (có thể chỉnh lại)
+        """
+        now = pygame.time.get_ticks()
+        start_x = 20
+
+        # Danh sách item hiển thị
+        timelines = []
+
+        if self.item_manager.active_bullet:
+            item = self.item_manager.active_bullet
+            remaining = max(0, self.item_manager.bullet_end_time - now)
+            duration = self.item_manager.effect_duration.get(item, 0)
+            if remaining > 0:
+                timelines.append((item, remaining, duration, 110))
+
+        if self.item_manager.active_shield:
+            item = self.item_manager.active_shield
+            remaining = max(0, self.item_manager.shield_end_time - now)
+            duration = self.item_manager.effect_duration.get(item, 0)
+            if remaining > 0:
+                timelines.append((item, remaining, duration, 140))
+
+        # Vẽ tất cả timeline
+        for item, remaining, duration, start_y in timelines:
+            icon = self.item_icons[item]
+            self.screen.blit(icon, (start_x, start_y))
+
+            # Timeline bar
+            bar_x, bar_y = start_x + 45, start_y + 12
+            bar_width, bar_height = 150, 12
+
+            # Background
+            pygame.draw.rect(self.screen, (60, 60, 60), (bar_x, bar_y, bar_width, bar_height), border_radius=6)
+
+            # Fill theo phần trăm còn lại
+            percent = remaining / duration
+            fill_width = int(bar_width * percent)
+            pygame.draw.rect(self.screen, (50, 200, 255), (bar_x, bar_y, fill_width, bar_height), border_radius=6)
+
+            # Border
+            pygame.draw.rect(self.screen, (255, 255, 255), (bar_x, bar_y, bar_width, bar_height), 2, border_radius=6)
