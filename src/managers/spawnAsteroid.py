@@ -1,13 +1,16 @@
 import pygame
 import random
+from entities import asteroid
 from entities.asteroid import Asteroid
 from entities.hit_particle import HitParticle
 from entities.explosion import Explosion
+from entities.item import Item
 
 class AsteroidSpawner:
-    def __init__(self, asteroid_group, screen_width):
+    def __init__(self, asteroid_group, screen_width, game_ref):
         self.asteroids = asteroid_group
         self.screen_width = screen_width
+        self.game_ref = game_ref
         self.spawn_timer = 0
         self.spawn_interval = 800  # ms
         self.hit_particles = pygame.sprite.Group()
@@ -15,6 +18,8 @@ class AsteroidSpawner:
         self.difficulty = 1.0
         self.difficulty_growth = 0.005  # mỗi giây tăng difficulty
         self.stop_spawn = False
+       
+       
 
 
     def update(self, dt):
@@ -58,8 +63,6 @@ class AsteroidSpawner:
                         game_screen.total_kills += 1    # Cập nhật điểm kill để lưu vào save
                     explosion = Explosion(asteroid.rect.centerx, asteroid.rect.centery)
                     self.explosions.add(explosion)
-
-    # ---------------------------------------------------------
     def draw(self, screen):
         self.asteroids.draw(screen)
         self.hit_particles.draw(screen)
