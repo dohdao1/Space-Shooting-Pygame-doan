@@ -4,8 +4,12 @@ import sys, os
 from managers.collision import CollisionSystem
 from entities.player import Player
 from entities.asteroid import Asteroid
+from managers.itemManager import ItemManager
 from managers.spawnAsteroid import AsteroidSpawner
 from managers.bossManager import BossManager
+from managers.collision import CollisionSystem
+from entities.item import Item
+from managers.skinManager import SkinManager
 
 sys.path.append(os.path.dirname(os.path.abspath(__file__)))
 
@@ -19,7 +23,7 @@ class gameScreen(baseScreen):
         self.font_suggest = pygame.font.SysFont('arial', 20)
 
         # mốc điểm spawn boss
-        self.boss_score_milestones = [20, 500, 1200]
+        self.boss_score_milestones = [1000, 2000, 4000]
         
 
         self.reset_game_state()
@@ -32,12 +36,17 @@ class gameScreen(baseScreen):
         self.lives = 3
         self.is_paused = False
 
+        self.skin_manager = SkinManager()
         # Player
         self.player = Player(
             x=self.screen.get_width() // 2,
             y=self.screen.get_height() - 80,
             speed=5
         )
+
+        self.item_group = pygame.sprite.Group()
+        self.item_manager = ItemManager(self.player)
+
 
         # Groups
         self.player_group = pygame.sprite.Group(self.player)
@@ -46,7 +55,10 @@ class gameScreen(baseScreen):
         # Asteroids
         self.asteroid_group = pygame.sprite.Group()
        
-        self.spawner = AsteroidSpawner(self.asteroid_group, screen_width=self.screen.get_width())
+        self.spawner = AsteroidSpawner(self.asteroid_group, screen_width=self.screen.get_width(), game_ref=self)
+
+        # Collision system
+        self.collision = CollisionSystem()
 
         # effects
         self.hit_particles = pygame.sprite.Group()
@@ -72,6 +84,11 @@ class gameScreen(baseScreen):
         self._last_boss_hit_ms = 0
         self._boss_hit_cooldown_ms = 500
 
+        self.item_group = pygame.sprite.Group()
+        self.item_manager = ItemManager(self.player)
+
+        # cho phép item manager truy cập gameScreen (để + mạng)
+        self.player.game_ref = self
     def handle_events(self, events):
         if self.is_paused:
             return
@@ -118,6 +135,7 @@ class gameScreen(baseScreen):
         # player input & update
         keys = pygame.key.get_pressed()
         self.player.update(keys, self.bullet_group, self.screen.get_width())
+        
 
         # update player's bullets (some bullets may use dt, some not - update supports both)
         try:
@@ -140,17 +158,19 @@ class gameScreen(baseScreen):
             except TypeError:
                 self.asteroid_group.update()
 
-            # collisions bullet vs asteroid handled by spawner helper
-            try:
-                self.spawner.handle_bullet_collision(self.bullet_group, game_screen=self)
-            except Exception:
-                pass
+            # ⭐ COLLISION: BULLET VS ASTEROID → nhận dropped_items
+            hit_particles, death_particles, dropped_items = self.collision.bullet_vs_asteroid(
+                self.bullet_group,
+                self.spawner
+            )
+            # ⭐ Spawn Item rơi ra từ asteroid
+            for drop in dropped_items:
+                item = Item(drop["pos"][0], drop["pos"][1], drop["type"])
+                self.item_group.add(item)
 
             # asteroid vs player
-            hits_player = pygame.sprite.spritecollide(self.player, self.asteroid_group, False, collided=pygame.sprite.collide_mask)
-            for asteroid in hits_player:
-                self.lives -= 1
-                asteroid.reset()
+            self.collision.asteroid_vs_player(self.spawner, self.player)
+
         else:
             # boss active or boss spawning effect: ensure spawner paused
             try:
@@ -177,6 +197,24 @@ class gameScreen(baseScreen):
                 if now_ms - self._last_boss_hit_ms > self._boss_hit_cooldown_ms:
                     self.lives -= 1
                     self._last_boss_hit_ms = now_ms
+        # update items
+        try:
+            self.item_group.update(dt)
+        except:
+            self.item_group.update()
+        
+        # ⭐ PLAYER ĂN ITEM
+        picked = pygame.sprite.spritecollide(
+            self.player, 
+            self.item_group, 
+            True, 
+            pygame.sprite.collide_mask
+        )
+        for item in picked:
+            self.item_manager.apply_item(item.type)
+
+        # ⭐ UPDATE ITEM MANAGER
+        self.item_manager.update()
 
         # UI hover
         mouse_pos = pygame.mouse.get_pos()
@@ -194,6 +232,19 @@ class gameScreen(baseScreen):
             pygame.mouse.set_visible(True)
             self.switch_to("game_over", self.score)
 
+        # bomb effect
+        if getattr(self.player, "trigger_bomb", False):
+            for asteroid in self.asteroid_group:
+                self.score += 10
+                asteroid.kill()
+            self.player.trigger_bomb = False
+            
+        if getattr(self.player, "trigger_bomb", False):
+            for asteroid in self.asteroid_group:
+                self.score += 10
+                asteroid.kill()
+            self.player.trigger_bomb = False
+
     def draw(self):
         # background
         self.screen.fill((10, 10, 30))
@@ -202,8 +253,14 @@ class gameScreen(baseScreen):
         self.player_group.draw(self.screen)
         self.bullet_group.draw(self.screen)
 
+        # vẽ khiên nếu có
+        self.player.draw_shield(self.screen)
+
         # draw asteroids (spawner may pause drawing but group remains)
         self.asteroid_group.draw(self.screen)
+
+        # draw items
+        self.item_group.draw(self.screen)
 
         # draw boss (bossManager will render boss + effects)
         self.boss_bullets.draw(self.screen)
@@ -223,21 +280,21 @@ class gameScreen(baseScreen):
         lives_text = self.font.render(f"LIVES: {self.lives}", True, (255, 50, 50))
         self.screen.blit(lives_text, (20, 60))
 
-        # score button
-        button_color = (100, 200, 100) if self.button_hover else (70, 170, 70)
-        pygame.draw.rect(self.screen, button_color, self.score_button, border_radius=8)
-        pygame.draw.rect(self.screen, (255, 255, 255), self.score_button, 2, border_radius=8)
-        button_text = self.font_suggest.render("+1 ĐIỂM", True, (255, 255, 255))
-        self.screen.blit(button_text, button_text.get_rect(center=self.score_button.center))
+        # # score button
+        # button_color = (100, 200, 100) if self.button_hover else (70, 170, 70)
+        # pygame.draw.rect(self.screen, button_color, self.score_button, border_radius=8)
+        # pygame.draw.rect(self.screen, (255, 255, 255), self.score_button, 2, border_radius=8)
+        # button_text = self.font_suggest.render("+1 ĐIỂM", True, (255, 255, 255))
+        # self.screen.blit(button_text, button_text.get_rect(center=self.score_button.center))
 
-        # life button
-        life_button = pygame.Rect(10, 240, 100, 50)
-        life_hover = life_button.collidepoint(pygame.mouse.get_pos())
-        life_color = (200, 100, 100) if life_hover else (170, 70, 70)
-        pygame.draw.rect(self.screen, life_color, life_button, border_radius=8)
-        pygame.draw.rect(self.screen, (255, 255, 255), life_button, 2, border_radius=8)
-        life_text = self.font_suggest.render("-1 MẠNG", True, (255, 255, 255))
-        self.screen.blit(life_text, life_text.get_rect(center=life_button.center))
+        # # life button
+        # life_button = pygame.Rect(10, 240, 100, 50)
+        # life_hover = life_button.collidepoint(pygame.mouse.get_pos())
+        # life_color = (200, 100, 100) if life_hover else (170, 70, 70)
+        # pygame.draw.rect(self.screen, life_color, life_button, border_radius=8)
+        # pygame.draw.rect(self.screen, (255, 255, 255), life_button, 2, border_radius=8)
+        # life_text = self.font_suggest.render("-1 MẠNG", True, (255, 255, 255))
+        # self.screen.blit(life_text, life_text.get_rect(center=life_button.center))
 
         # help
         help_text = self.font_suggest.render("ESC/P: Pause Menu | L: Lose(thua ngay)", True, (200, 200, 200))

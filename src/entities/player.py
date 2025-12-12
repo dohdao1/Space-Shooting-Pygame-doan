@@ -1,14 +1,25 @@
-import pygame
+import pygame, math
 from .bullet import Bullet
+from managers.skinManager import SkinManager
 
 class Player(pygame.sprite.Sprite):
-    def __init__(self, x, y, speed=6):
+    def __init__(self, x, y, speed=6, skin_manager=None):
         super().__init__()
-        self.image = pygame.image.load("../assets/images/player/player.png").convert_alpha()
-        self.image = pygame.transform.scale(self.image, (60, 60)) 
+        self.skin_manager = skin_manager or SkinManager()
+        skin_name = self.skin_manager.selected_skin if self.skin_manager else "default"
+        skin_path = self.skin_manager.skins[skin_name]["path"]
+
+        self.image = pygame.image.load(skin_path).convert_alpha()
+        self.image = pygame.transform.scale(self.image, (60, 60))
         self.rect = self.image.get_rect(center=(x, y))
 
         self.speed = speed
+        self.has_shield = False
+        self.shield_end_time = 0
+        self.shield_image = pygame.image.load("assets/images/effects/shield.png").convert_alpha()
+        self.shield_image = pygame.transform.scale(self.shield_image, (90, 90))
+        self.activate_shield(6000)   # 6 giây khi vào trận
+
 
         # bullet system
         self.last_shot = 0
@@ -17,7 +28,7 @@ class Player(pygame.sprite.Sprite):
         # bạn có thể thay đổi gói này khi chơi, khi ăn item,...
         self.bullet_package = {
             "bullet_class": Bullet,   # loại bullet
-            "fire_rate": 200,         # thời gian giữa mỗi lần bắn (ms)
+            "fire_rate": 300,         # thời gian giữa mỗi lần bắn (ms)
             "burst": 1,               # số đạn mỗi lần
             "spread": 0               # độ lệch trái/phải (0 = bắn thẳng)
         }
@@ -43,25 +54,67 @@ class Player(pygame.sprite.Sprite):
         current_time = pygame.time.get_ticks()
 
         if current_time - self.last_shot >= self.bullet_package["fire_rate"]:
+
             bullet_class = self.bullet_package["bullet_class"]
             burst = self.bullet_package["burst"]
             spread = self.bullet_package["spread"]
 
+            base_angle = 270 
+
             # Nếu chỉ bắn 1 viên
             if burst == 1:
-                bullets_group.add(bullet_class(self.rect.centerx, self.rect.top))
+                bullets_group.add(bullet_class(self.rect.centerx, self.rect.top, base_angle))
 
             else:
-                # bắn N viên lan sang 2 bên
-                offset_start = -(burst // 2) * spread
-                for i in range(burst):
-                    offset = offset_start + i * spread
-                    b = bullet_class(self.rect.centerx + offset, self.rect.top)
-                    bullets_group.add(b)
-
+                if burst == 2 and spread == 0:
+                    offset = 14
+                    bullets_group.add(
+                        bullet_class(self.rect.centerx - offset, self.rect.top, base_angle)
+                    )
+                    bullets_group.add(  
+                        bullet_class(self.rect.centerx + offset, self.rect.top, base_angle)
+                    )
+                else:
+                    angles = [
+                        base_angle - spread + i * (2 * spread / (burst - 1))
+                        for i in range(burst)   
+                    ]
+                    for angle in angles:
+                        bullets_group.add(
+                            bullet_class(self.rect.centerx, self.rect.top, angle)
+                        )  
             self.last_shot = current_time
 
     # ========= UPDATE =========
     def update(self, keys, bullets_group, screen_width, screen_height=720):
         self.move_mouse(screen_width, screen_height)
         self.auto_shoot(bullets_group)
+        # --- Shield timer ---
+        if self.has_shield and pygame.time.get_ticks() > self.shield_end_time:
+                self.break_shield()
+
+    def draw_shield(self, screen):
+        if self.has_shield:
+            shield_rect = self.shield_image.get_rect(center=self.rect.center)
+            screen.blit(self.shield_image, shield_rect)
+
+    # ===== KÍCH HOẠT KHIÊN =====
+    def activate_shield(self, duration=6000):
+        self.has_shield = True
+        self.shield_active = True
+        self.shield_end_time = pygame.time.get_ticks() + duration
+    def break_shield(self):
+        self.has_shield = False
+        self.shield_active = False
+        self.shield_end_time = 0
+
+    def take_damage(self, amount):
+    
+        # nếu có khiên thì không trừ máu
+        if getattr(self, "shield_active", False):
+            self.break_shield()
+            return
+
+        # không có khiên → trừ mạng
+        if hasattr(self, "game_ref"):
+            self.game_ref.lives -= 1
