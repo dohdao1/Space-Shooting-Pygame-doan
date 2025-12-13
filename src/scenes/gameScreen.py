@@ -10,49 +10,13 @@ from managers.bossManager import BossManager
 from managers.collision import CollisionSystem
 from entities.item import Item
 from managers.skinManager import SkinManager
+from managers.effects import ShieldBreakParticle, Shockwave
 
 sys.path.append(os.path.dirname(os.path.abspath(__file__)))
 
 from config import *
 from .baseScreen import baseScreen
 
-# gamescreen.py
-# ... (các lệnh import hiện tại)
-
-# ⭐ CLASS HIỆU ỨNG VỠ KHIÊN
-class ShieldBreakParticle(pygame.sprite.Sprite):
-    def __init__(self, center_x, center_y, color=(50, 200, 255)):
-        super().__init__()
-        self.color = color
-        self.radius = random.randint(3, 7)
-        self.image = pygame.Surface((self.radius * 2, self.radius * 2), pygame.SRCALPHA)
-        pygame.draw.circle(self.image, self.color, (self.radius, self.radius), self.radius)
-        self.rect = self.image.get_rect(center=(center_x, center_y))
-        
-        # Tốc độ và hướng di chuyển ngẫu nhiên
-        angle = random.uniform(0, 360)
-        self.speed = random.uniform(2, 5)
-        self.vel_x = self.speed * math.cos(math.radians(angle))
-        self.vel_y = self.speed * math.sin(math.radians(angle))
-        
-        self.lifetime = random.randint(30, 60) # Tồn tại 30-60 frame
-        self.current_frame = 0
-
-    def update(self, dt):
-        # Giảm opacity (hoặc kích thước) dần dần
-        self.radius -= 0.1*dt*60  
-        if self.radius <= 0:
-            self.kill()
-            return
-            
-        # Cập nhật vị trí
-        self.rect.x += self.vel_x*dt*60
-        self.rect.y += self.vel_y*60
-        
-        # Tự hủy sau khi hết thời gian
-        self.lifetime -= (dt*1000)
-        if self.lifetime <= 0:
-            self.kill()
 
 class gameScreen(baseScreen):
     def __init__(self, game):
@@ -84,7 +48,11 @@ class gameScreen(baseScreen):
         self.score = 0
         self.lives = 3
         self.is_paused = False
-
+        self.screen_shake_time = 0 
+        self.screen_shake_intensity = 5
+        self.hit_particles = pygame.sprite.Group()
+        self.shield_break_effects = pygame.sprite.Group() 
+        self.shockwave_group = pygame.sprite.Group()
 
         self.skin_manager = SkinManager()
         # Player
@@ -116,6 +84,8 @@ class gameScreen(baseScreen):
         # shields broken 
         self.shield_break_effects = pygame.sprite.Group()
 
+        self.shockwave_group = pygame.sprite.Group()
+
         # Boss groups & manager
         self.boss_bullets = pygame.sprite.Group()
         # Pass asteroid_group and spawner so BossManager can clear them
@@ -137,10 +107,7 @@ class gameScreen(baseScreen):
         self._last_boss_hit_ms = 0
         self._boss_hit_cooldown_ms = 500
 
-        self.item_group = pygame.sprite.Group()
-        self.item_manager = ItemManager(self.player)
-
-        # cho phép item manager truy cập gameScreen (để + mạng)
+            # cho phép item manager truy cập gameScreen (để + mạng)
         self.player.game_ref = self
     def handle_events(self, events):
         if self.is_paused:
@@ -175,6 +142,45 @@ class gameScreen(baseScreen):
 
         dt = self.game.clock.get_time() / 1000.0
         now_ms = pygame.time.get_ticks()
+        last_update_time = now_ms
+
+        if self.screen_shake_time > 0:
+            self.screen_shake_time -= now_ms - last_update_time
+
+        # ⭐ CẬP NHẬT NHÓM SHOCKWAVE
+        try:
+            self.shockwave_group.update(dt) 
+        except TypeError:
+            self.shockwave_group.update()
+
+        # bomb effect
+        if getattr(self.player, "trigger_bomb", False):
+            # ⭐ KÍCH HOẠT RUNG KHI DÙNG BOMB
+            self.screen_shake_time = 1000 # Rung 1 giây (1000ms)
+            shockwave = Shockwave(self.player.rect.center)
+            self.shockwave_group.add(shockwave)
+            self.game.audio_manager.play_sound("bomb_explosion")
+            self.player.trigger_bomb = False
+        
+        # ⭐ COLLISION: SHOCKWAVE VS ASTEROID
+        shockwave_active = len(self.shockwave_group) > 0
+        if shockwave_active:
+            for shockwave in self.shockwave_group:
+                # Tìm thiên thạch bị sóng xung kích chạm vào
+                asteroids_hit = []
+                for asteroid in self.asteroid_group:
+                    # Kiểm tra khoảng cách: nếu khoảng cách <= bán kính sóng, thiên thạch bị va chạm
+                    dist_sq = (asteroid.rect.centerx - shockwave.center_x)**2 + (asteroid.rect.centery - shockwave.center_y)**2
+                    # Lấy bán kính thiên thạch lớn nhất (giả sử 30)
+                    if dist_sq <= (shockwave.radius + 30)**2: 
+                        asteroids_hit.append(asteroid)
+
+                for asteroid in asteroids_hit:
+                    # Tiêu diệt thiên thạch
+                    self.score += 10
+                    # Tạo hiệu ứng nổ nhỏ cho thiên thạch bị Bomb tiêu diệt
+                    self.create_shield_break_particles(asteroid.rect.center) # Dùng lại hàm particle
+                    asteroid.kill()
 
         # spawn boss when milestone reached (only once per milestone)
         if self.boss_manager.boss is None:
@@ -292,20 +298,9 @@ class gameScreen(baseScreen):
             pygame.mouse.set_visible(True)
             self.switch_to("game_over", self.score)
 
-        # bomb effect
-        if getattr(self.player, "trigger_bomb", False):
-            for asteroid in self.asteroid_group:
-                self.score += 10
-                asteroid.kill()
-            self.player.trigger_bomb = False
-            
-        if getattr(self.player, "trigger_bomb", False):
-            for asteroid in self.asteroid_group:
-                self.score += 10
-                asteroid.kill()
-            self.player.trigger_bomb = False
 
     def draw(self):
+
         # background
         self.screen.fill((10, 10, 30))
 
@@ -324,6 +319,9 @@ class gameScreen(baseScreen):
 
         # draw items
         self.item_group.draw(self.screen)
+
+        # draw shockwaves
+        self.shockwave_group.draw(self.screen)
 
         # draw boss (bossManager will render boss + effects)
         self.boss_bullets.draw(self.screen)

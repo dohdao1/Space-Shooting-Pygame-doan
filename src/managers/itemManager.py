@@ -8,7 +8,7 @@ class ItemManager:
             "triple_bullet": 15000,
             "quad_bullet": 15000,
             "six_bullet": 15000,
-            "shield": 15000
+            "shield": 6000
         }
         self.active_bullet = None  # buff đạn đang chạy
         self.bullet_end_time = 0
