@@ -5,7 +5,7 @@ import sys, os
 from config import *
 from scenes import mainMenu, gameScreen, pauseMenu, gameOver, settingScreen, statsScreen
 from scenes import mainMenu, gameScreen, pauseMenu, gameOver, shopScreen
-from managers import screenManager, SecureSaveManager, audioManager
+from managers import screenManager, SecureSaveManager, audioManager, SkinManager
 from scenes.shopScreen import shopScreen
 
 class Game:
@@ -23,6 +23,8 @@ class Game:
         self.stats = self.save_manager.load_stats()
 
         self.audio_manager = audioManager(self.save_manager)
+
+        self.skin_manager = SkinManager(self.save_manager)
         
         # Đăng ký tất cả screens
         self.screen_manager.register_screen("main_menu", mainMenu)

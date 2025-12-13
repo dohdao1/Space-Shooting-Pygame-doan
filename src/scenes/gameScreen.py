@@ -9,7 +9,6 @@ from managers.spawnAsteroid import AsteroidSpawner
 from managers.bossManager import BossManager
 from managers.collision import CollisionSystem
 from entities.item import Item
-from managers.skinManager import SkinManager
 
 sys.path.append(os.path.dirname(os.path.abspath(__file__)))
 
@@ -36,12 +35,12 @@ class gameScreen(baseScreen):
         self.lives = 3
         self.is_paused = False
 
-        self.skin_manager = SkinManager()
         # Player
         self.player = Player(
             x=self.screen.get_width() // 2,
             y=self.screen.get_height() - 80,
-            speed=5
+            speed=5,
+            skin_manager=self.game.skin_manager
         )
 
         self.item_group = pygame.sprite.Group()
@@ -94,6 +93,7 @@ class gameScreen(baseScreen):
             return
 
         for event in events:
+            pygame.mouse.set_visible(False)
             if event.type == pygame.QUIT:
                 self.save_current_stats()   # Lưu trước khi thoát
                 self.game.running = False
@@ -279,22 +279,6 @@ class gameScreen(baseScreen):
 
         lives_text = self.font.render(f"LIVES: {self.lives}", True, (255, 50, 50))
         self.screen.blit(lives_text, (20, 60))
-
-        # # score button
-        # button_color = (100, 200, 100) if self.button_hover else (70, 170, 70)
-        # pygame.draw.rect(self.screen, button_color, self.score_button, border_radius=8)
-        # pygame.draw.rect(self.screen, (255, 255, 255), self.score_button, 2, border_radius=8)
-        # button_text = self.font_suggest.render("+1 ĐIỂM", True, (255, 255, 255))
-        # self.screen.blit(button_text, button_text.get_rect(center=self.score_button.center))
-
-        # # life button
-        # life_button = pygame.Rect(10, 240, 100, 50)
-        # life_hover = life_button.collidepoint(pygame.mouse.get_pos())
-        # life_color = (200, 100, 100) if life_hover else (170, 70, 70)
-        # pygame.draw.rect(self.screen, life_color, life_button, border_radius=8)
-        # pygame.draw.rect(self.screen, (255, 255, 255), life_button, 2, border_radius=8)
-        # life_text = self.font_suggest.render("-1 MẠNG", True, (255, 255, 255))
-        # self.screen.blit(life_text, life_text.get_rect(center=life_button.center))
 
         # help
         help_text = self.font_suggest.render("ESC/P: Pause Menu | L: Lose(thua ngay)", True, (200, 200, 200))

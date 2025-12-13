@@ -1,13 +1,19 @@
 import pygame, math
 from .bullet import Bullet
-from managers.skinManager import SkinManager
 
 class Player(pygame.sprite.Sprite):
     def __init__(self, x, y, speed=6, skin_manager=None):
         super().__init__()
-        self.skin_manager = skin_manager or SkinManager()
-        skin_name = self.skin_manager.selected_skin if self.skin_manager else "default"
-        skin_path = self.skin_manager.skins[skin_name]["path"]
+        # Nhận skin_manager từ bên ngoài
+        self.skin_manager = skin_manager
+        
+        # Lấy skin đang được chọn
+        if self.skin_manager:
+            skin_name = self.skin_manager.selected_skin
+            skin_path = self.skin_manager.get_skin_path()  # Dùng method mới
+        else:
+            skin_name = "default"
+            skin_path = "assets/images/player/player.png"
 
         self.image = pygame.image.load(skin_path).convert_alpha()
         self.image = pygame.transform.scale(self.image, (60, 60))
@@ -82,7 +88,20 @@ class Player(pygame.sprite.Sprite):
                     for angle in angles:
                         bullets_group.add(
                             bullet_class(self.rect.centerx, self.rect.top, angle)
-                        )  
+                        )
+
+            if hasattr(self, 'game_ref') and hasattr(self.game_ref.game, 'audio_manager'):
+            # Tính volume scale dựa trên loại đạn
+                volume_scale = 0.3
+
+                if burst == 1:
+                    volume_scale = 0.25
+
+                else:
+                    volume_scale = min(0.5, 0.3 + (burst * 0.05))  # đạn nhiều thì to hơn
+            
+                self.game_ref.game.audio_manager.play_sound("bullet", volume_scale=volume_scale)
+
             self.last_shot = current_time
 
     # ========= UPDATE =========
