@@ -1,4 +1,4 @@
-import pygame
+import pygame, random, math
 import sys, os
 
 from managers.collision import CollisionSystem
@@ -15,6 +15,44 @@ sys.path.append(os.path.dirname(os.path.abspath(__file__)))
 
 from config import *
 from .baseScreen import baseScreen
+
+# gamescreen.py
+# ... (các lệnh import hiện tại)
+
+# ⭐ CLASS HIỆU ỨNG VỠ KHIÊN
+class ShieldBreakParticle(pygame.sprite.Sprite):
+    def __init__(self, center_x, center_y, color=(50, 200, 255)):
+        super().__init__()
+        self.color = color
+        self.radius = random.randint(3, 7)
+        self.image = pygame.Surface((self.radius * 2, self.radius * 2), pygame.SRCALPHA)
+        pygame.draw.circle(self.image, self.color, (self.radius, self.radius), self.radius)
+        self.rect = self.image.get_rect(center=(center_x, center_y))
+        
+        # Tốc độ và hướng di chuyển ngẫu nhiên
+        angle = random.uniform(0, 360)
+        self.speed = random.uniform(2, 5)
+        self.vel_x = self.speed * math.cos(math.radians(angle))
+        self.vel_y = self.speed * math.sin(math.radians(angle))
+        
+        self.lifetime = random.randint(30, 60) # Tồn tại 30-60 frame
+        self.current_frame = 0
+
+    def update(self, dt):
+        # Giảm opacity (hoặc kích thước) dần dần
+        self.radius -= 0.1*dt*60  
+        if self.radius <= 0:
+            self.kill()
+            return
+            
+        # Cập nhật vị trí
+        self.rect.x += self.vel_x*dt*60
+        self.rect.y += self.vel_y*60
+        
+        # Tự hủy sau khi hết thời gian
+        self.lifetime -= (dt*1000)
+        if self.lifetime <= 0:
+            self.kill()
 
 class gameScreen(baseScreen):
     def __init__(self, game):
@@ -74,6 +112,9 @@ class gameScreen(baseScreen):
 
         # effects
         self.hit_particles = pygame.sprite.Group()
+
+        # shields broken 
+        self.shield_break_effects = pygame.sprite.Group()
 
         # Boss groups & manager
         self.boss_bullets = pygame.sprite.Group()
@@ -147,6 +188,13 @@ class gameScreen(baseScreen):
         # player input & update
         keys = pygame.key.get_pressed()
         self.player.update(keys, self.bullet_group, self.screen.get_width())
+
+        if self.player.shield_broken_at is not None:
+            self.create_shield_break_particles(self.player.rect.center)
+            self.player.shield_broken_at = None
+            self.game.audio_manager.play_sound("shield_break")
+
+        self.shield_break_effects.update(dt)
         
 
         # update player's bullets (some bullets may use dt, some not - update supports both)
@@ -268,6 +316,9 @@ class gameScreen(baseScreen):
         # vẽ khiên nếu có
         self.player.draw_shield(self.screen)
 
+        # ⭐ VẼ HIỆU ỨNG VỠ KHIÊN
+        self.shield_break_effects.draw(self.screen)
+
         # draw asteroids (spawner may pause drawing but group remains)
         self.asteroid_group.draw(self.screen)
 
@@ -337,6 +388,11 @@ class gameScreen(baseScreen):
         )
 
         self.game.audio_manager.stop_music()
+    # ⭐ HÀM TẠO HIỆU ỨNG VỠ KHIÊN
+    def create_shield_break_particles(self, center_pos):
+        for _ in range(15): # Tạo 15 mảnh vỡ
+            particle = ShieldBreakParticle(center_pos[0], center_pos[1])
+            self.shield_break_effects.add(particle)
 
 
     # Lưu tạm thời khi pause hoặc thoát game
@@ -350,10 +406,6 @@ class gameScreen(baseScreen):
     
 
     def draw_item_timelines(self):
-        """
-        Vẽ timeline cho các buff đang chạy: bullet và shield.
-        Bullet ở y=110, shield ở y=140 (có thể chỉnh lại)
-        """
         now = pygame.time.get_ticks()
         start_x = 20
 
