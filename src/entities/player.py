@@ -16,7 +16,7 @@ class Player(pygame.sprite.Sprite):
             skin_path = "assets/images/player/player.png"
 
         self.image = pygame.image.load(skin_path).convert_alpha()
-        self.image = pygame.transform.scale(self.image, (60, 60))
+        self.image = pygame.transform.scale(self.image, (72, 72))
         self.rect = self.image.get_rect(center=(x, y))
 
         self.speed = speed
