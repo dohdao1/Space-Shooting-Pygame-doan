@@ -19,6 +19,7 @@ class Player(pygame.sprite.Sprite):
         self.shield_image = pygame.image.load("assets/images/effects/shield.png").convert_alpha()
         self.shield_image = pygame.transform.scale(self.shield_image, (90, 90))
         self.activate_shield(6000)   # 6 giây khi vào trận
+        self.shield_broken_at = None
 
 
         # bullet system
@@ -107,6 +108,7 @@ class Player(pygame.sprite.Sprite):
         self.has_shield = False
         self.shield_active = False
         self.shield_end_time = 0
+        self.shield_broken_at = pygame.time.get_ticks()
 
     def take_damage(self, amount):
     

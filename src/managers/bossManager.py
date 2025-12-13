@@ -1,10 +1,11 @@
 import pygame
 import random
 from entities.boss import Boss
+from entities.item import Item
 
 class BossManager:
 
-    def __init__(self, spawner, boss_bullet_group, player_bullet_group, player, asteroid_group, hit_particles, player_bullets):
+    def __init__(self, spawner, boss_bullet_group, player_bullet_group, player, asteroid_group, hit_particles, player_bullets, game_ref):
         self.boss = None
         self.spawner = spawner
         self.boss_bullets = boss_bullet_group
@@ -13,6 +14,16 @@ class BossManager:
         self.asteroid_group = asteroid_group
         self.hit_particles = hit_particles           
         self.player_bullets = player_bullets 
+        self.game_ref = game_ref
+
+        # 📦 ITEM RƠI KHI BOSS CHẾT (CỐ ĐỊNH)
+        self.boss_drop_items = [
+            "shield",
+            "life",
+            "quad_bullet",
+            "six_bullet",
+        ]
+
 
         # self.sfx_boss_hit = pygame.mixer.Sound("../assets/sounds/boss_hit.wav")
         # self.sfx_boss_hit.set_volume(0.55)        
@@ -131,19 +142,23 @@ class BossManager:
 
         if self.boss.is_dead():
             print("Boss defeated")
-          
-            try:
-                self.boss.kill()
-            except Exception:
-                pass
+
+            cx, cy = self.boss.rect.center
+
+            spacing = 50
+            start_x = cx - spacing * (len(self.boss_drop_items) - 1) // 2
+
+            for i, item_type in enumerate(self.boss_drop_items):
+                x = start_x + i * spacing
+                y = cy
+
+                item = Item(x, y, item_type)
+                self.game_ref.item_group.add(item)
+
+            self.boss.kill()
             self.boss = None
-
-
             setattr(self.spawner, "stop_spawn", False)
-
-            
             self.spawning = False
-
     def draw(self, screen):
         if not self.boss:
             return

@@ -1,4 +1,4 @@
-import pygame
+import pygame, random, math
 import sys, os
 
 from managers.collision import CollisionSystem
@@ -10,11 +10,13 @@ from managers.bossManager import BossManager
 from managers.collision import CollisionSystem
 from entities.item import Item
 from managers.skinManager import SkinManager
+from managers.effects import ShieldBreakParticle, Shockwave
 
 sys.path.append(os.path.dirname(os.path.abspath(__file__)))
 
 from config import *
 from .baseScreen import baseScreen
+
 
 class gameScreen(baseScreen):
     def __init__(self, game):
@@ -22,8 +24,23 @@ class gameScreen(baseScreen):
         self.font = pygame.font.SysFont('arial', 32)
         self.font_suggest = pygame.font.SysFont('arial', 20)
 
+        self.background_image = pygame.image.load("assets/images/ui/background.png").convert()
+
+        self.heart_img = pygame.image.load("assets/images/ui/heart.png").convert_alpha()
+        self.background_image = pygame.transform.scale(
+            self.background_image, 
+            (self.screen.get_width(), self.screen.get_height())
+        )
+        self.heart_img = pygame.transform.smoothscale(self.heart_img, (32, 32))
+
+        self.item_icons = {}
+        for name, path in Item.ICONS.items():
+            img = pygame.image.load(path).convert_alpha()
+            img = pygame.transform.smoothscale(img, (35, 35))
+            self.item_icons[name] = img
+
         # mốc điểm spawn boss
-        self.boss_score_milestones = [1000, 2000, 4000]
+        self.boss_score_milestones = [100, 2000, 4000]
         
 
         self.reset_game_state()
@@ -36,7 +53,13 @@ class gameScreen(baseScreen):
         self.lives = 3
         self.is_paused = False
 
-        self.skin_manager = SkinManager()
+        self.screen_shake_time = 0 
+        self.screen_shake_intensity = 5
+        
+        self.hit_particles = pygame.sprite.Group()
+        self.shield_break_effects = pygame.sprite.Group() 
+        self.shockwave_group = pygame.sprite.Group()
+        
         # Player
         self.player = Player(
             x=self.screen.get_width() // 2,
@@ -63,6 +86,11 @@ class gameScreen(baseScreen):
         # effects
         self.hit_particles = pygame.sprite.Group()
 
+        # shields broken 
+        self.shield_break_effects = pygame.sprite.Group()
+
+        self.shockwave_group = pygame.sprite.Group()
+
         # Boss groups & manager
         self.boss_bullets = pygame.sprite.Group()
         # Pass asteroid_group and spawner so BossManager can clear them
@@ -73,7 +101,8 @@ class gameScreen(baseScreen):
             player=self.player,
             asteroid_group=self.asteroid_group,
             hit_particles=self.hit_particles,
-            player_bullets=self.bullet_group
+            player_bullets=self.bullet_group,
+            game_ref=self
         )
 
         # UI test
@@ -84,10 +113,7 @@ class gameScreen(baseScreen):
         self._last_boss_hit_ms = 0
         self._boss_hit_cooldown_ms = 500
 
-        self.item_group = pygame.sprite.Group()
-        self.item_manager = ItemManager(self.player)
-
-        # cho phép item manager truy cập gameScreen (để + mạng)
+            # cho phép item manager truy cập gameScreen (để + mạng)
         self.player.game_ref = self
     def handle_events(self, events):
         if self.is_paused:
@@ -122,6 +148,45 @@ class gameScreen(baseScreen):
 
         dt = self.game.clock.get_time() / 1000.0
         now_ms = pygame.time.get_ticks()
+        last_update_time = now_ms
+
+        if self.screen_shake_time > 0:
+            self.screen_shake_time -= now_ms - last_update_time
+
+        # ⭐ CẬP NHẬT NHÓM SHOCKWAVE
+        try:
+            self.shockwave_group.update(dt) 
+        except TypeError:
+            self.shockwave_group.update()
+
+        # bomb effect
+        if getattr(self.player, "trigger_bomb", False):
+            # ⭐ KÍCH HOẠT RUNG KHI DÙNG BOMB
+            self.screen_shake_time = 1000 # Rung 1 giây (1000ms)
+            shockwave = Shockwave(self.player.rect.center)
+            self.shockwave_group.add(shockwave)
+            self.game.audio_manager.play_sound("bomb_explosion")
+            self.player.trigger_bomb = False
+        
+        # ⭐ COLLISION: SHOCKWAVE VS ASTEROID
+        shockwave_active = len(self.shockwave_group) > 0
+        if shockwave_active:
+            for shockwave in self.shockwave_group:
+                # Tìm thiên thạch bị sóng xung kích chạm vào
+                asteroids_hit = []
+                for asteroid in self.asteroid_group:
+                    # Kiểm tra khoảng cách: nếu khoảng cách <= bán kính sóng, thiên thạch bị va chạm
+                    dist_sq = (asteroid.rect.centerx - shockwave.center_x)**2 + (asteroid.rect.centery - shockwave.center_y)**2
+                    # Lấy bán kính thiên thạch lớn nhất (giả sử 30)
+                    if dist_sq <= (shockwave.radius + 30)**2: 
+                        asteroids_hit.append(asteroid)
+
+                for asteroid in asteroids_hit:
+                    # Tiêu diệt thiên thạch
+                    self.score += 10
+                    # Tạo hiệu ứng nổ nhỏ cho thiên thạch bị Bomb tiêu diệt
+                    self.create_shield_break_particles(asteroid.rect.center) # Dùng lại hàm particle
+                    asteroid.kill()
 
         # spawn boss when milestone reached (only once per milestone)
         if self.boss_manager.boss is None:
@@ -135,6 +200,13 @@ class gameScreen(baseScreen):
         # player input & update
         keys = pygame.key.get_pressed()
         self.player.update(keys, self.bullet_group, self.screen.get_width())
+
+        if self.player.shield_broken_at is not None:
+            self.create_shield_break_particles(self.player.rect.center)
+            self.player.shield_broken_at = None
+            self.game.audio_manager.play_sound("shield_break")
+
+        self.shield_break_effects.update(dt)
         
 
         # update player's bullets (some bullets may use dt, some not - update supports both)
@@ -232,23 +304,12 @@ class gameScreen(baseScreen):
             pygame.mouse.set_visible(True)
             self.switch_to("game_over", self.score)
 
-        # bomb effect
-        if getattr(self.player, "trigger_bomb", False):
-            for asteroid in self.asteroid_group:
-                self.score += 10
-                asteroid.kill()
-            self.player.trigger_bomb = False
-            
-        if getattr(self.player, "trigger_bomb", False):
-            for asteroid in self.asteroid_group:
-                self.score += 10
-                asteroid.kill()
-            self.player.trigger_bomb = False
 
     def draw(self):
-        # background
-        self.screen.fill((10, 10, 30))
 
+        # background
+        self.screen.blit(self.background_image, (0, 0)) 
+    
         # draw sprites
         self.player_group.draw(self.screen)
         self.bullet_group.draw(self.screen)
@@ -256,11 +317,17 @@ class gameScreen(baseScreen):
         # vẽ khiên nếu có
         self.player.draw_shield(self.screen)
 
+        # ⭐ VẼ HIỆU ỨNG VỠ KHIÊN
+        self.shield_break_effects.draw(self.screen)
+
         # draw asteroids (spawner may pause drawing but group remains)
         self.asteroid_group.draw(self.screen)
 
         # draw items
         self.item_group.draw(self.screen)
+
+        # draw shockwaves
+        self.shockwave_group.draw(self.screen)
 
         # draw boss (bossManager will render boss + effects)
         self.boss_bullets.draw(self.screen)
@@ -277,8 +344,13 @@ class gameScreen(baseScreen):
         score_text = self.font.render(f"SCORE: {self.score}", True, (255, 255, 255))
         self.screen.blit(score_text, (20, 20))
 
-        lives_text = self.font.render(f"LIVES: {self.lives}", True, (255, 50, 50))
-        self.screen.blit(lives_text, (20, 60))
+        # ❤️ Draw lives as hearts (max 5)
+        for i in range(min(self.lives, 5)):
+            self.screen.blit(self.heart_img, (20 + i * 40, 60))
+
+        # ----- ITEM TIMELINE -----
+        self.draw_item_timelines()
+
 
         # # score button
         # button_color = (100, 200, 100) if self.button_hover else (70, 170, 70)
@@ -320,6 +392,11 @@ class gameScreen(baseScreen):
         )
 
         self.game.audio_manager.stop_music()
+    # ⭐ HÀM TẠO HIỆU ỨNG VỠ KHIÊN
+    def create_shield_break_particles(self, center_pos):
+        for _ in range(15): # Tạo 15 mảnh vỡ
+            particle = ShieldBreakParticle(center_pos[0], center_pos[1])
+            self.shield_break_effects.add(particle)
 
 
     # Lưu tạm thời khi pause hoặc thoát game
@@ -330,4 +407,45 @@ class gameScreen(baseScreen):
         if self.score > stats['high_score']:
             stats['high_score'] = self.score
             self.game.save_manager.save_stats(stats)
-        
+    
+
+    def draw_item_timelines(self):
+        now = pygame.time.get_ticks()
+        start_x = 20
+
+        # Danh sách item hiển thị
+        timelines = []
+
+        if self.item_manager.active_bullet:
+            item = self.item_manager.active_bullet
+            remaining = max(0, self.item_manager.bullet_end_time - now)
+            duration = self.item_manager.effect_duration.get(item, 0)
+            if remaining > 0:
+                timelines.append((item, remaining, duration, 110))
+
+        if self.item_manager.active_shield:
+            item = self.item_manager.active_shield
+            remaining = max(0, self.item_manager.shield_end_time - now)
+            duration = self.item_manager.effect_duration.get(item, 0)
+            if remaining > 0:
+                timelines.append((item, remaining, duration, 140))
+
+        # Vẽ tất cả timeline
+        for item, remaining, duration, start_y in timelines:
+            icon = self.item_icons[item]
+            self.screen.blit(icon, (start_x, start_y))
+
+            # Timeline bar
+            bar_x, bar_y = start_x + 45, start_y + 12
+            bar_width, bar_height = 150, 12
+
+            # Background
+            pygame.draw.rect(self.screen, (60, 60, 60), (bar_x, bar_y, bar_width, bar_height), border_radius=6)
+
+            # Fill theo phần trăm còn lại
+            percent = remaining / duration
+            fill_width = int(bar_width * percent)
+            pygame.draw.rect(self.screen, (50, 200, 255), (bar_x, bar_y, fill_width, bar_height), border_radius=6)
+
+            # Border
+            pygame.draw.rect(self.screen, (255, 255, 255), (bar_x, bar_y, bar_width, bar_height), 2, border_radius=6)
