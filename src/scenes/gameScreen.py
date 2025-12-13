@@ -24,7 +24,13 @@ class gameScreen(baseScreen):
         self.font = pygame.font.SysFont('arial', 32)
         self.font_suggest = pygame.font.SysFont('arial', 20)
 
+        self.background_image = pygame.image.load("assets/images/ui/background.png").convert()
+
         self.heart_img = pygame.image.load("assets/images/ui/heart.png").convert_alpha()
+        self.background_image = pygame.transform.scale(
+            self.background_image, 
+            (self.screen.get_width(), self.screen.get_height())
+        )
         self.heart_img = pygame.transform.smoothscale(self.heart_img, (32, 32))
 
         self.item_icons = {}
@@ -33,10 +39,8 @@ class gameScreen(baseScreen):
             img = pygame.transform.smoothscale(img, (35, 35))
             self.item_icons[name] = img
 
-
-
         # mốc điểm spawn boss
-        self.boss_score_milestones = [1000, 2000, 4000]
+        self.boss_score_milestones = [100, 2000, 4000]
         
 
         self.reset_game_state()
@@ -48,13 +52,14 @@ class gameScreen(baseScreen):
         self.score = 0
         self.lives = 3
         self.is_paused = False
+
         self.screen_shake_time = 0 
         self.screen_shake_intensity = 5
+        
         self.hit_particles = pygame.sprite.Group()
         self.shield_break_effects = pygame.sprite.Group() 
         self.shockwave_group = pygame.sprite.Group()
-
-        self.skin_manager = SkinManager()
+        
         # Player
         self.player = Player(
             x=self.screen.get_width() // 2,
@@ -96,7 +101,8 @@ class gameScreen(baseScreen):
             player=self.player,
             asteroid_group=self.asteroid_group,
             hit_particles=self.hit_particles,
-            player_bullets=self.bullet_group
+            player_bullets=self.bullet_group,
+            game_ref=self
         )
 
         # UI test
@@ -302,8 +308,8 @@ class gameScreen(baseScreen):
     def draw(self):
 
         # background
-        self.screen.fill((10, 10, 30))
-
+        self.screen.blit(self.background_image, (0, 0)) 
+    
         # draw sprites
         self.player_group.draw(self.screen)
         self.bullet_group.draw(self.screen)
