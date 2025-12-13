@@ -45,10 +45,6 @@ class CollisionSystem:
 
         return hit_particles, death_particles, dropped_items
 
-
-
-
-
     def asteroid_vs_player(self, asteroid_spawner, player):
         for asteroid in asteroid_spawner.asteroids:
             if asteroid.rect.colliderect(player.rect):
