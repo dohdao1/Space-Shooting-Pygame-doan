@@ -23,6 +23,7 @@ class pauseMenu(baseScreen):
     
     def handle_events(self, events):
         for event in events:
+            pygame.mouse.set_visible(True)
             if event.type == pygame.KEYDOWN:
                 self.game.audio_manager.play_sound("shooter_sfx", volume_scale=0.3)
                 if event.key == pygame.K_ESCAPE or event.key == pygame.K_p:

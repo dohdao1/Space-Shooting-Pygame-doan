@@ -151,6 +151,8 @@ class gameScreen(baseScreen):
         now_ms = pygame.time.get_ticks()
         last_update_time = now_ms
 
+        self.play_time += dt
+
         if self.screen_shake_time > 0:
             self.screen_shake_time -= now_ms - last_update_time
 
@@ -185,6 +187,7 @@ class gameScreen(baseScreen):
                 for asteroid in asteroids_hit:
                     # Tiêu diệt thiên thạch
                     self.score += 10
+                    self.total_kills += 1
                     # Tạo hiệu ứng nổ nhỏ cho thiên thạch bị Bomb tiêu diệt
                     self.create_shield_break_particles(asteroid.rect.center) # Dùng lại hàm particle
                     asteroid.kill()
@@ -367,6 +370,7 @@ class gameScreen(baseScreen):
         
         # Thêm coin vào tài khoản
         self.game.save_manager.add_coin(coin_reward)
+        print(f"cộng thêm là:{coin_reward}")
         
         # Thêm vào lịch sử game
         self.game.save_manager.add_game_history(
@@ -375,6 +379,7 @@ class gameScreen(baseScreen):
             kills=self.total_kills,
             deaths=1  # mỗi lần thua tính 1 death
         )
+        print(f"giá trị là:{self.score} | play time: {self.play_time} | kill: {self.total_kills}")
 
         self.game.audio_manager.stop_music()
     # ⭐ HÀM TẠO HIỆU ỨNG VỠ KHIÊN

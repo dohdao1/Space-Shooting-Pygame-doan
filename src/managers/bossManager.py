@@ -30,7 +30,12 @@ class BossManager:
 
        
         try:
-            self.boss_image = pygame.image.load("../assets/images/asteroid/boss.png").convert_alpha()
+            boss_image_0 = pygame.image.load("assets/images/asteroid/boss.png").convert_alpha()
+            scale_factor = 0.6 # tỉ lệ
+            new_width = int(boss_image_0.get_width() * scale_factor)
+            new_height = int(boss_image_0.get_height() * scale_factor)
+            self.boss_image = pygame.transform.scale(boss_image_0, (new_width, new_height))
+            
         except Exception:
             surf = pygame.Surface((180, 140), pygame.SRCALPHA)
             pygame.draw.ellipse(surf, (180,40,40), surf.get_rect())
