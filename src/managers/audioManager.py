@@ -96,7 +96,14 @@ class audioManager:
                 self.music_tracks["gameplay"] = gameplay_music_path
             else:
                 print(f"WARNING: File not found: {gameplay_music_path}")
-            
+
+            # âm thanh đạn bắn
+            bullet_sound_path = ("assets/sounds/sfx/bullet_sound.mp3")
+            if os.path.exists(bullet_sound_path):
+                self.sounds["bullet"] = pygame.mixer.Sound(bullet_sound_path)  # <-- Tạo Sound object
+            else:
+                print(f"WARNING: File not found: {bullet_sound_path}")
+
             # Áp dụng volume
             self.update_volumes()
             

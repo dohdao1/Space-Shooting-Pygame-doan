@@ -19,7 +19,14 @@ class screenManager:
         
         # Nếu chuyển về game, reset game state
         if screen_name == "game" and hasattr(self.screens[screen_name], 'reset_game_state'):
-            self.screens[screen_name].reset_game_state()
+            # Chỉ reset nếu đang từ main menu vào, không phải từ pause
+            if not (self.current_screen == "pause" and data is None):
+                # data thường là score khi từ game_over vào
+                # Nếu từ pause vào, data = None và current_screen = "pause"
+                # Nếu từ main_menu vào, current_screen không phải "pause"
+                if data is None and self.current_screen != "pause":
+                    # Reset chỉ khi từ menu (không phải từ pause)
+                    self.screens[screen_name].reset_game_state()
         
         # Gọi on_enter() của màn hình mới
         new_screen = self.screens[screen_name]

@@ -219,21 +219,21 @@ class statsScreen(baseScreen):
         
         # Số điểm
         if high_score >= 1000:
-            achievements["Score Master"] = "f{high_score} [MAX]"
+            achievements["Score Master"] = f"{high_score} [MAX]"
         elif high_score >= 500:
-            achievements["Score Expert"] = "f{high_score} [PRO]"
+            achievements["Score Expert"] = f"{high_score} [PRO]"
         elif high_score >= 100:
-            achievements["Score Beginner"] = "f{high_score} [NEW]"
+            achievements["Score Beginner"] = f"{high_score} [NEW]"
         else:
             achievements["Score"] = f"{high_score}/100"
         
         # Số game
         if total_games >= 50:
-            achievements["Veteran"] = "f{total_games} [Nghiện]"
+            achievements["Veteran"] = f"{total_games} [Nghiện]"
         elif total_games >= 20:
-            achievements["Regular"] = "f{total_games} [Chạm cỏ đi]"
+            achievements["Regular"] = f"{total_games} [Chạm cỏ đi]"
         elif total_games >= 5:
-            achievements["Casual"] = "f{total_games} [Vừa vừa thôi ní]"
+            achievements["Casual"] = f"{total_games} [Vừa vừa thôi ní]"
         else:
             achievements["Games"] = f"{total_games}/5"
         

@@ -222,13 +222,11 @@ class SecureSaveManager:
         
         # Kiểm tra space đã unlock chưa
         if space_id not in spaces['unlocked']:
-            print(f"Space {space_id} chưa được mở khóa!")
             return False
         
         spaces['current'] = space_id
         self.save_spaces(spaces)
         
-        print(f"Đã chuyển sang space: {space_id}")
         return True
     
     # Lấy space id hiện đã set
