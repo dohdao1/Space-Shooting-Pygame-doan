@@ -1,5 +1,6 @@
 import pygame
 import os
+from config import resource_path
 
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 ASSET_DIR = os.path.join(BASE_DIR, "assets", "images", "asteroid")
@@ -12,7 +13,7 @@ class BossBullet(pygame.sprite.Sprite):
         # chuẩn hóa
         bullet_img_path = os.path.normpath(bullet_img_path)
         try:
-            self.image = pygame.image.load(bullet_img_path).convert_alpha()
+            self.image = pygame.image.load(resource_path(bullet_img_path)).convert_alpha()
             print("load dc rồi nha")
         except Exception:
             self.image = pygame.Surface((8,16), pygame.SRCALPHA)

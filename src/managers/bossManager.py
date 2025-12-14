@@ -2,6 +2,7 @@ import pygame
 import random
 from entities.boss import Boss
 from entities.item import Item
+from config import resource_path
 
 class BossManager:
 
@@ -16,7 +17,9 @@ class BossManager:
         self.player_bullets = player_bullets 
         self.game_ref = game_ref
 
-        # 📦 ITEM RƠI KHI BOSS CHẾT (CỐ ĐỊNH)
+        self.current_boss_score_milestone = None
+
+        # ITEM RƠI KHI BOSS CHẾT (CỐ ĐỊNH)
         self.boss_drop_items = [
             "shield",
             "life",
@@ -30,7 +33,7 @@ class BossManager:
 
        
         try:
-            boss_image_0 = pygame.image.load("assets/images/asteroid/boss.png").convert_alpha()
+            boss_image_0 = pygame.image.load(resource_path("assets/images/asteroid/boss.png")).convert_alpha()
             scale_factor = 0.6 # tỉ lệ
             new_width = int(boss_image_0.get_width() * scale_factor)
             new_height = int(boss_image_0.get_height() * scale_factor)
@@ -45,7 +48,6 @@ class BossManager:
         self.spawning = False
         self.spawn_effect_start = 0
         self.spawn_effect_duration_ms = 1800  # ms
-
        
         self.spawned_milestones = set()
 
@@ -53,15 +55,25 @@ class BossManager:
         self.entry_target_y = 30
 
     def spawn_boss(self):
-
         if self.boss:
             return
-
-        print("Boss xuất hiện — clearing screen")
-
-        
+    
         setattr(self.spawner, "stop_spawn", True)
 
+        # Xác đinh milestone để spawn
+        current_score = self.game_ref.score
+        milestone_to_use = None
+        
+        for milestone in self.game_ref.boss_score_milestones:
+            if current_score >= milestone and milestone not in self.spawned_milestones:
+                milestone_to_use = milestone
+                break
+        
+        if milestone_to_use is None:
+            return  # Không có milestone nào phù hợp
+        
+        self.current_boss_score_milestone = milestone_to_use  # Lưu lại milestone này
+        self.spawned_milestones.add(milestone_to_use)
         
         try:
             # iterate over a copy to be safe
@@ -79,13 +91,11 @@ class BossManager:
         except Exception:
             pass
 
-       
         try:
             self.hit_particles.empty()
         except Exception:
             pass
 
-        
         try:
             self.player_bullets.empty()
         except Exception:
@@ -105,10 +115,8 @@ class BossManager:
             self.player_bullet_group
         )
 
-        
         self.boss.entry_target_y = self.entry_target_y
 
-        
         self.spawning = True
         self.spawn_effect_start = pygame.time.get_ticks()
 
@@ -122,16 +130,13 @@ class BossManager:
         if not self.boss:
             return
 
-
         if self.spawning_effect_active():
         
             self.boss.update(dt)
             return
-
        
         self.boss.update(dt)
 
-        
         try:
             player_top = self.player.rect.top
             
@@ -146,7 +151,19 @@ class BossManager:
             pass
 
         if self.boss.is_dead():
-            print("Boss defeated")
+            # cộng điểm và kill
+            if hasattr(self.game_ref, 'score'):
+                self.game_ref.score += 100  # Boss = 100 điểm
+                self.game_ref.total_kills += 1  # Boss = 1 kill
+
+            # Thêm mile stone nếu cha nội nào rảnh quá chơi quá 180p 1 ngày
+            if (hasattr(self.game_ref, 'boss_score_milestones') and self.current_boss_score_milestone is not None):
+                milestones = self.game_ref.boss_score_milestones
+                
+                # Chỉ thêm milestone mới nếu đã đánh bại boss cuối cùng trong danh sách
+                if len(milestones) > 0 and self.current_boss_score_milestone == milestones[-1]:
+                    new_milestone = milestones[-1] + 1000  # Tăng 1000 điểm mỗi boss
+                    milestones.append(new_milestone)
 
             cx, cy = self.boss.rect.center
 
@@ -164,6 +181,9 @@ class BossManager:
             self.boss = None
             setattr(self.spawner, "stop_spawn", False)
             self.spawning = False
+            # trả về 
+            self.current_boss_score_milestone = None
+            
     def draw(self, screen):
         if not self.boss:
             return

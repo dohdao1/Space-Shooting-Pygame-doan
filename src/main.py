@@ -1,6 +1,7 @@
 #file hoạt động chính của game
 import pygame, random, math
 import sys, os
+import config
 
 from config import *
 from scenes import mainMenu, gameScreen, pauseMenu, gameOver, settingScreen, statsScreen
