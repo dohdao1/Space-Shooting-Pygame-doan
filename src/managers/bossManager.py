@@ -29,6 +29,7 @@ class BossManager:
         self.player_bullets = player_bullets
         self.item_group = item_group
         self.game_ref = game_ref
+        self.boss_dead = False
 
         self.current_boss_score_milestone = None
 
@@ -58,6 +59,7 @@ class BossManager:
         self.spawning = False
         self.spawn_effect_start = 0
         self.spawn_effect_duration_ms = 1600
+        self.boss_dead = False
 
         self.spawned_milestones = set()
         self.entry_target_y = 40
@@ -202,24 +204,18 @@ class BossManager:
             self.shake_timer -= 1
 
         # boss chết
-        if self.boss.is_dead():
+        if self.boss and self.boss.hp <= 0 and not self.boss_dead:
+            self.boss_dead = True
             # cộng điểm và kill
             if hasattr(self.game_ref, 'score'):
                 self.game_ref.score += 100  # Boss = 100 điểm
                 self.game_ref.total_kills += 1  # Boss = 1 kill
-
-            # Thêm mile stone nếu cha nội nào rảnh quá chơi quá 180p 1 ngày
-            if (hasattr(self.game_ref, 'boss_score_milestones') and self.current_boss_score_milestone is not None):
-                milestones = self.game_ref.boss_score_milestones
-                
-                # Chỉ thêm milestone mới nếu đã đánh bại boss cuối cùng trong danh sách
-                if len(milestones) > 0 and self.current_boss_score_milestone == milestones[-1]:
-                    new_milestone = milestones[-1] + 1000  # Tăng 1000 điểm mỗi boss
-                    milestones.append(new_milestone)
             self._on_boss_dead()
 
     # ----------------------------------------------------
     def _on_boss_dead(self):
+        if not self.boss:
+            return
         cx, cy = self.boss.rect.center
 
         drop_count = random.randint(3, 5)
@@ -233,16 +229,12 @@ class BossManager:
             item = Item(cx + offset_x, cy + offset_y, item_type)
             self.item_group.add(item)
 
-            self.boss.kill()
-            self.boss = None
-            setattr(self.spawner, "stop_spawn", False)
-            self.spawning = False
-            # trả về 
-            self.current_boss_score_milestone = None
-            
         self.boss.kill()
         self.boss = None
         setattr(self.spawner, "stop_spawn", False)
+        self.spawning = False
+            # trả về 
+        self.current_boss_score_milestone = None
 
     # ----------------------------------------------------
     def draw(self, screen):
