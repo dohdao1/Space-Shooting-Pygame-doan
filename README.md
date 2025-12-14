@@ -16,7 +16,7 @@ pip install pyinstaller
     pyinstaller --onefile --windowed --name "SpaceShooter" src/main.py
 
     # Đầy đủ hơn:
-    pyinstaller --onefile --windowed --name "SpaceShooter" --icon="assets/images/icon.ico" --add-data="assets;assets" src/main.py
+    pyinstaller --onefile --windowed --name "SpaceShooter" --icon="assets/icon.ico" --add-data="assets;assets" src/main.py
 
     Trong đó:
     --onefile: Gộp tất cả thành 1 file .exe duy nhất
