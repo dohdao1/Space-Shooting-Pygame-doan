@@ -1,6 +1,7 @@
 #tính toán âm thanh thắng hoặc thua gì đó, âm thanh khi click chọn,... đây không phải là âm thanh khi va chạm, hay âm thanh bắn, mấy cái đó nên dc xử lý ở trong entities
 import pygame
 import os
+from config import resource_path
 
 class audioManager:
     def __init__(self, save_manager):
@@ -70,35 +71,35 @@ class audioManager:
             self.music_tracks = {}
             
             # Âm thanh khi thua
-            lose_sound_path = ("assets/sounds/func/lose_voice.mp3")
+            lose_sound_path = resource_path("assets/sounds/func/lose_voice.mp3")
             if os.path.exists(lose_sound_path):
                 self.sounds["lose"] = pygame.mixer.Sound(lose_sound_path)
             else:
                 print(f"WARNING: File not found: {lose_sound_path}")
         
             # SFX
-            sfx_shooter_path = ("assets/sounds/sfx/sfx_space_shooter.mp3")
+            sfx_shooter_path = resource_path("assets/sounds/sfx/sfx_space_shooter.mp3")
             if os.path.exists(sfx_shooter_path):
                 self.sounds["shooter_sfx"] = pygame.mixer.Sound(sfx_shooter_path)
             else:
                 print(f"WARNING: File not found: {sfx_shooter_path}")
             
             # Nhạc nền khi mở game
-            bg_music_path = ("assets/sounds/music/background-music.mp3")
+            bg_music_path = resource_path("assets/sounds/music/background-music.mp3")
             if os.path.exists(bg_music_path):
                 self.music_tracks["menu"] = bg_music_path
             else:
                 print(f"WARNING: File not found: {bg_music_path}")
             
             # Nhạc khi chơi game
-            gameplay_music_path = ("assets/sounds/music/gameplay_music.mp3")
+            gameplay_music_path = resource_path("assets/sounds/music/gameplay_music.mp3")
             if os.path.exists(gameplay_music_path):
                 self.music_tracks["gameplay"] = gameplay_music_path
             else:
                 print(f"WARNING: File not found: {gameplay_music_path}")
 
             # âm thanh đạn bắn
-            bullet_sound_path = ("assets/sounds/sfx/bullet_sound.mp3")
+            bullet_sound_path = resource_path("assets/sounds/sfx/bullet_sound.mp3")
             if os.path.exists(bullet_sound_path):
                 self.sounds["bullet"] = pygame.mixer.Sound(bullet_sound_path)  # <-- Tạo Sound object
             else:
