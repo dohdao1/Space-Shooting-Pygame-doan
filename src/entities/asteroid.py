@@ -2,6 +2,8 @@ import pygame
 import random
 from enum import Enum
 from config import *
+from managers.itemManager import ItemManager
+import os
 
 # --- ENUM loại thiên thạch ---
 class AsteroidType(Enum):
@@ -16,12 +18,13 @@ ASTEROID_STATS = {
 }
 
 class Asteroid(pygame.sprite.Sprite):
-    def __init__(self, difficulty=1.0, screen_width=800):
+    def __init__(self, item_dropper,difficulty=1.0, screen_width=800):
         super().__init__()
         self.type = random.choice(list(AsteroidType))
         self.difficulty = difficulty
         self.screen_width = screen_width
-
+        self.item_dropper = item_dropper
+        
         self.load_image()
         self.reset()
 

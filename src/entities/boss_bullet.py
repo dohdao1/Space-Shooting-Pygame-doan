@@ -9,7 +9,7 @@ class BossBullet(pygame.sprite.Sprite):
     def __init__(self, x, y, dx, dy, speed=150):
         super().__init__()
         # try load image
-        bullet_img_path = os.path.join("assets", "images", "asteroid", "boss", "bullet-boss.png")
+        bullet_img_path = os.path.join("assets", "images", "asteroid", "bullet-boss.png")
         # chuẩn hóa
         bullet_img_path = os.path.normpath(bullet_img_path)
         try:

@@ -7,10 +7,11 @@ from entities.explosion import Explosion
 from entities.item import Item
 
 class AsteroidSpawner:
-    def __init__(self, asteroid_group, screen_width, game_ref):
+    def __init__(self, asteroid_group, screen_width, game_ref, item_dropper):
         self.asteroids = asteroid_group
         self.screen_width = screen_width
         self.game_ref = game_ref
+        self.item_dropper = item_dropper
         self.spawn_timer = 0
         self.spawn_interval = 800  # ms
         self.hit_particles = pygame.sprite.Group()
@@ -45,7 +46,7 @@ class AsteroidSpawner:
 
     # ---------------------------------------------------------
     def try_spawn(self):
-        asteroid = Asteroid(difficulty=self.difficulty, screen_width=self.screen_width)
+        asteroid = Asteroid(difficulty=self.difficulty, screen_width=self.screen_width,item_dropper=self.item_dropper)
         self.asteroids.add(asteroid)
 
     # ---------------------------------------------------------

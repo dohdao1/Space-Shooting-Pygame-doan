@@ -14,16 +14,23 @@ class CollisionSystem:
         dropped_items = []
 
         for bullet in bullets:
-            hits = pygame.sprite.spritecollide(bullet, asteroid_spawner.asteroids, False)
+            hits = pygame.sprite.spritecollide(
+                bullet,
+                asteroid_spawner.asteroids,
+                False,
+                pygame.sprite.collide_mask
+            )
+
             for asteroid in hits:
-                result = asteroid.take_damage(bullet.damage)
                 bullet.kill()
+                result = asteroid.take_damage(bullet.damage)
 
                 if result == "hit":
                     hit_particles.append({
                         "pos": asteroid.rect.center,
                         "count": random.randint(3, 6)
-                    })  
+                    })
+
                 elif result == "dead":
                     # Cộng điểm
                     asteroid_spawner.game_ref.score += 10
@@ -45,27 +52,39 @@ class CollisionSystem:
                             "bomb"
                         ])
 
+                    # DROP ITEM
+                    if random.random() < 0.35:
                         dropped_items.append({
-                            "type": drop_type,
+                            "type": random.choice([
+                                "double_bullet",
+                                "triple_bullet",
+                                "quad_bullet",
+                                "six_bullet",
+                                "shield",
+                                "life",
+                                "bomb"
+                            ]),
                             "pos": asteroid.rect.center
                         })
+                    asteroid.last_hit_pos = asteroid.rect.center
+                    asteroid.kill()
 
         return hit_particles, death_particles, dropped_items
 
+    # ------------------------------------------------
     def asteroid_vs_player(self, asteroid_spawner, player):
-        for asteroid in asteroid_spawner.asteroids:
-            if asteroid.rect.colliderect(player.rect):
-                #nếu có khiên
-                if player.has_shield:
-                    player.break_shield()
-                    asteroid.kill()
-                    return True
-                # không có khiên
-                
+        hits = pygame.sprite.spritecollide(
+            player,
+            asteroid_spawner.asteroids,
+            True,
+            pygame.sprite.collide_mask
+        )
+
+        if hits:
+            if player.has_shield:
+                player.break_shield()
+            else:
                 player.take_damage(10)
-                asteroid.kill()
-                return True
+            return True
+
         return False
-
-
-   

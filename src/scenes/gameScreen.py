@@ -78,7 +78,7 @@ class gameScreen(baseScreen):
         # Asteroids
         self.asteroid_group = pygame.sprite.Group()
        
-        self.spawner = AsteroidSpawner(self.asteroid_group, screen_width=self.screen.get_width(), game_ref=self)
+        self.spawner = AsteroidSpawner(self.asteroid_group, screen_width=self.screen.get_width(), game_ref=self, item_dropper=self.item_group)
 
         # Collision system
         self.collision = CollisionSystem()
@@ -102,6 +102,7 @@ class gameScreen(baseScreen):
             asteroid_group=self.asteroid_group,
             hit_particles=self.hit_particles,
             player_bullets=self.bullet_group,
+            item_group= self.item_group,
             game_ref=self
         )
 
@@ -141,15 +142,15 @@ class gameScreen(baseScreen):
     def update(self):
         if self.is_paused:
             return
-
+        dt_ms = self.game.clock.get_time()
         dt = self.game.clock.get_time() / 1000.0
         now_ms = pygame.time.get_ticks()
-        last_update_time = now_ms
+        # last_update_time = now_ms
 
         self.play_time += dt
 
         if self.screen_shake_time > 0:
-            self.screen_shake_time -= now_ms - last_update_time
+            self.screen_shake_time -= dt_ms
 
         # CẬP NHẬT NHÓM SHOCKWAVE
         try:
@@ -311,6 +312,12 @@ class gameScreen(baseScreen):
 
 
     def draw(self):
+
+        # offset_x = offset_y = 0
+        # if self.screen_shake_time > 0:
+        #     offset_x = random.randint(-self.screen_shake_intensity, self.screen_shake_intensity)
+        #     offset_y = random.randint(-self.screen_shake_intensity, self.screen_shake_intensity)
+
 
         # background
         self.screen.blit(self.background_image, (0, 0)) 

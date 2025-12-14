@@ -71,12 +71,12 @@ class SkinManager:
     # laod skin mặc định
     def _load_default_skins(self):
         self.skins = {
-            "default": {"name": "default", "path": "assets/images/player/player.png", "price": 0, "owned": True},
-            "sea_eagle": {"name": "sea_eagle", "path": "assets/images/player/sea_eagle.png", "price": 200, "owned": False},
-            "black_iron": {"name": "black_iron", "path": "assets/images/player/black_iron.png", "price": 300, "owned": False},
-            "silver_wing": {"name": "silver_wing", "path": "assets/images/player/silver_wing.png", "price": 400, "owned": False},
-            "chaos_phantom": {"name": "chaos_phantom", "path": "assets/images/player/chaos_phantom.png", "price": 500, "owned": False},
-            "leviathan_omega": {"name": "leviathan_omega", "path": "assets/images/player/leviathan_omega.png", "price": 600, "owned": False}
+            "default": {"name": "default", "path": "../assets/images/player/player.png", "price": 0, "owned": True},
+            "sea_eagle": {"name": "sea_eagle", "path": "../assets/images/player/sea_eagle.png", "price": 200, "owned": False},
+            "black_iron": {"name": "black_iron", "path": "../assets/images/player/black_iron.png", "price": 300, "owned": False},
+            "silver_wing": {"name": "silver_wing", "path": "../assets/images/player/silver_wing.png", "price": 400, "owned": False},
+            "chaos_phantom": {"name": "chaos_phantom", "path": "../assets/images/player/chaos_phantom.png", "price": 500, "owned": False},
+            "leviathan_omega": {"name": "leviathan_omega", "path": "../assets/images/player/leviathan_omega.png", "price": 600, "owned": False}
         }
         self.owned_skins = ["default"]
         self.selected_skin = "default"
