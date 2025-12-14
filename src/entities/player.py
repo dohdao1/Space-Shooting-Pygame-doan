@@ -1,5 +1,6 @@
 import pygame, math
 from .bullet import Bullet
+from config import resource_path
 
 class Player(pygame.sprite.Sprite):
     def __init__(self, x, y, speed=6, skin_manager=None):
@@ -15,14 +16,14 @@ class Player(pygame.sprite.Sprite):
             skin_name = "default"
             skin_path = "assets/images/player/player.png"
 
-        self.image = pygame.image.load(skin_path).convert_alpha()
+        self.image = pygame.image.load(resource_path(skin_path)).convert_alpha()
         self.image = pygame.transform.scale(self.image, (72, 72))
         self.rect = self.image.get_rect(center=(x, y))
 
         self.speed = speed
         self.has_shield = False
         self.shield_end_time = 0
-        self.shield_image = pygame.image.load("assets/images/effects/shield.png").convert_alpha()
+        self.shield_image = pygame.image.load(resource_path("assets/images/effects/shield.png")).convert_alpha()
         self.shield_image = pygame.transform.scale(self.shield_image, (90, 90))
         self.activate_shield(6000)   # 6 giây khi vào trận
         self.shield_broken_at = None

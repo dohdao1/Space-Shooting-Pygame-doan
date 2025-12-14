@@ -1,11 +1,13 @@
 import pygame
 import random
+from config import *
 
 class CollisionSystem:
     def __init__(self):
-        pass
-
-    # ------------------------------------------------
+        self.BASE_DROP_RATE = BASE_DROP_RATE
+        self.DIFFICULTY_BONUS = DIFFICULTY_BONUS
+        self.MAX_DROP_RATE = MAX_DROP_RATE
+        
     def bullet_vs_asteroid(self, bullets, asteroid_spawner):
         hit_particles = []
         death_particles = []
@@ -30,12 +32,25 @@ class CollisionSystem:
                     })
 
                 elif result == "dead":
+                    # Cộng điểm
                     asteroid_spawner.game_ref.score += 10
                     asteroid_spawner.game_ref.total_kills += 1
 
-                    death_particles.append({
-                        "pos": asteroid.rect.center
-                    })
+                    death_particles.append({ "pos": asteroid.rect.center})
+
+                    # tính tỉ lệ rơi item
+                    drop_chance = min(BASE_DROP_RATE + asteroid_spawner.difficulty * DIFFICULTY_BONUS, MAX_DROP_RATE)
+
+                    if random.random() < drop_chance: # đổi tỉ lệ
+                        drop_type = random.choice([
+                            "double_bullet",
+                            "triple_bullet",
+                            "quad_bullet",
+                            "six_bullet",
+                            "shield",
+                            "life",
+                            "bomb"
+                        ])
 
                     # DROP ITEM
                     if random.random() < 0.35:

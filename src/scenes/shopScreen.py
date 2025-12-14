@@ -1,5 +1,6 @@
 import pygame
 from .baseScreen import baseScreen
+from config import resource_path
 
 class shopScreen(baseScreen):
     def __init__(self, game):
@@ -38,7 +39,7 @@ class shopScreen(baseScreen):
         skins_data = self.skin_manager.get_all_skins()
         
         for skin in skins_data:
-            img = pygame.image.load(skin["path"]).convert_alpha()
+            img = pygame.image.load(resource_path(skin["path"])).convert_alpha()
             img = pygame.transform.smoothscale(img, (target_w, target_h))
             self.skin_images[skin["name"]] = img
 

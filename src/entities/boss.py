@@ -18,7 +18,8 @@ class Boss(pygame.sprite.Sprite):
         self.mask = pygame.mask.from_surface(self.image)
 
         # stats
-        self.max_hp = 20
+
+        self.max_hp = 100
         self.hp = self.max_hp
 
         # movement
@@ -74,7 +75,7 @@ class Boss(pygame.sprite.Sprite):
             self._spread(7, 240)
             self._aim_player(260)
 
-        elif self.phase == 3 and self.fire_timer >= 0.35:
+        elif self.phase == 3 and self.fire_timer >= 0.9:
             self.fire_timer = 0
             self._spiral(6, 300)
             self._aim_player(320)

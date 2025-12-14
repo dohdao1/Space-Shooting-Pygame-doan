@@ -126,7 +126,7 @@ class statsScreen(baseScreen):
             y += 30
         else:
             # Hiển thị 5 game gần nhất
-            for i, game in enumerate(history[:5]):
+            for i, game in enumerate(history[:3]):
                 game_date = game.get('date', 'N/A')
                 game_score = game.get('score', 0)
                 game_time = game.get('play_time', 0)
@@ -229,11 +229,11 @@ class statsScreen(baseScreen):
         
         # Số game
         if total_games >= 50:
-            achievements["Veteran"] = f"{total_games} [Nghiện]"
+            achievements["Veteran"] = f"{total_games} [Nghien]"
         elif total_games >= 20:
-            achievements["Regular"] = f"{total_games} [Chạm cỏ đi]"
+            achievements["Regular"] = f"{total_games} [Cham co di]"
         elif total_games >= 5:
-            achievements["Casual"] = f"{total_games} [Vừa vừa thôi ní]"
+            achievements["Casual"] = f"{total_games} [Vua vua thoi ni]"
         else:
             achievements["Games"] = f"{total_games}/5"
         

@@ -44,8 +44,10 @@ class pauseMenu(baseScreen):
                                 self.game.audio_manager.play_music("gameplay")
 
                             elif button["action"] == "main_menu":
+                                self.save_and_exit("quit")
                                 self.switch_to("main_menu")
                             elif button["action"] == "quit":
+                                self.save_and_exit("quit")
                                 self.game.running = False
     
     def update(self):
@@ -86,3 +88,11 @@ class pauseMenu(baseScreen):
         help_text = self.font_normal.render("ESC: Resume Game", True, (200, 200, 200))
         help_rect = help_text.get_rect(center=(self.screen.get_width()//2, 500))
         self.screen.blit(help_text, help_rect)
+
+    def save_and_exit(self, status="quit"):
+        try:
+            game_screen = self.game.screen_manager.screens.get("game")
+            if game_screen and hasattr(game_screen, 'save_game_progress'):
+                game_screen.save_game_progress(status=status)
+        except Exception as e:
+            print(f"Lỗi khi lưu: {e}")

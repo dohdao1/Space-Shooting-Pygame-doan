@@ -48,7 +48,6 @@ class AsteroidSpawner:
     def try_spawn(self):
         asteroid = Asteroid(difficulty=self.difficulty, screen_width=self.screen_width,item_dropper=self.item_dropper)
         self.asteroids.add(asteroid)
-        print("SPAWN:", asteroid.type, "score =", asteroid.base_score)
 
 
     # ---------------------------------------------------------
@@ -62,16 +61,9 @@ class AsteroidSpawner:
                     self.hit_particles.add(particle)
                 if status == "dead":
                     if game_screen:
-                        score = int(asteroid.base_score * (1 + self.difficulty * 0.1))
-                        game_screen.score += score
+                        game_screen.score += 10
                         game_screen.total_kills += 1
 
-                        print(
-                            "KILL:", asteroid.type,
-                            "BASE:", asteroid.base_score,
-                            "ADD:", score,
-                            "TOTAL:", game_screen.score
-                        )
 
                     explosion = Explosion(
                         asteroid.rect.centerx,

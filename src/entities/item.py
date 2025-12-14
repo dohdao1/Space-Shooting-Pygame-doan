@@ -1,4 +1,5 @@
 import pygame
+from config import resource_path
 
 class Item(pygame.sprite.Sprite):
     ICONS = {
@@ -19,7 +20,7 @@ class Item(pygame.sprite.Sprite):
 
         img = Item.ICONS.get(item_type)
         if img:
-            self.image = pygame.image.load(img).convert_alpha()
+            self.image = pygame.image.load(resource_path(img)).convert_alpha()
             self.image = pygame.transform.smoothscale(
                 self.image,
                 (Item.ICON_SIZE, Item.ICON_SIZE)

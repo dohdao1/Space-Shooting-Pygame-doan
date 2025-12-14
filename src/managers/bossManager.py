@@ -2,6 +2,7 @@ import pygame
 import random
 from entities.boss import Boss
 from entities.item import Item
+from config import resource_path
 from entities.explosion import Explosion
 
 class BossManager:
@@ -29,6 +30,9 @@ class BossManager:
         self.item_group = item_group
         self.game_ref = game_ref
 
+        self.current_boss_score_milestone = None
+
+        # ITEM RƠI KHI BOSS CHẾT (CỐ ĐỊNH)
         # ITEM DROP KHI BOSS CHẾT
         self.boss_drop_items = [
             "shield",
@@ -39,11 +43,12 @@ class BossManager:
 
         # load boss image
         try:
-            img = pygame.image.load("assets/images/asteroid/boss.png").convert_alpha()
-            self.boss_image = pygame.transform.smoothscale(
-                img,
-                (int(img.get_width()*0.6), int(img.get_height()*0.6))
-            )
+            boss_image_0 = pygame.image.load(resource_path("assets/images/asteroid/boss.png")).convert_alpha()
+            scale_factor = 0.6 # tỉ lệ
+            new_width = int(boss_image_0.get_width() * scale_factor)
+            new_height = int(boss_image_0.get_height() * scale_factor)
+            self.boss_image = pygame.transform.scale(boss_image_0, (new_width, new_height))
+            
         except Exception:
             surf = pygame.Surface((180,140), pygame.SRCALPHA)
             pygame.draw.ellipse(surf, (180,40,40), surf.get_rect())
@@ -65,6 +70,53 @@ class BossManager:
     def spawn_boss(self):
         if self.boss:
             return
+    
+        setattr(self.spawner, "stop_spawn", True)
+
+        # Xác đinh milestone để spawn
+        current_score = self.game_ref.score
+        milestone_to_use = None
+        
+        for milestone in self.game_ref.boss_score_milestones:
+            if current_score >= milestone and milestone not in self.spawned_milestones:
+                milestone_to_use = milestone
+                break
+        
+        if milestone_to_use is None:
+            return  # Không có milestone nào phù hợp
+        
+        self.current_boss_score_milestone = milestone_to_use  # Lưu lại milestone này
+        self.spawned_milestones.add(milestone_to_use)
+        
+        try:
+            # iterate over a copy to be safe
+            for a in list(self.asteroid_group):
+                a.kill()
+        except Exception:
+            pass
+
+        # CLEAR spawner effects / explosions if they exist on spawner
+        try:
+            if hasattr(self.spawner, "hit_particles"):
+                self.spawner.hit_particles.empty()
+            if hasattr(self.spawner, "explosions"):
+                self.spawner.explosions.empty()
+        except Exception:
+            pass
+
+        try:
+            self.hit_particles.empty()
+        except Exception:
+            pass
+
+        try:
+            self.player_bullets.empty()
+        except Exception:
+            pass
+        try:
+            self.boss_bullets.empty()
+        except Exception:
+            pass
 
         setattr(self.spawner, "stop_spawn", True)
 
@@ -84,6 +136,7 @@ class BossManager:
             self.player,
             self.player_bullet_group
         )
+
         self.boss.entry_target_y = self.entry_target_y
 
         self.spawning = True
@@ -106,6 +159,21 @@ class BossManager:
         # boss entry done
         if self.spawning_effect_active():
             return
+       
+        self.boss.update(dt)
+
+        try:
+            player_top = self.player.rect.top
+            
+            min_gap = 200
+            if self.boss.rect.bottom >= player_top - (min_gap // 2):
+                
+                target_y = max(self.boss.entry_target_y, player_top - min_gap)
+                
+                if self.boss.rect.y > target_y:
+                    self.boss.rect.y = target_y
+        except Exception:
+            pass
         self.spawning = False
 
         # PLAYER BULLET → BOSS
@@ -135,6 +203,19 @@ class BossManager:
 
         # boss chết
         if self.boss.is_dead():
+            # cộng điểm và kill
+            if hasattr(self.game_ref, 'score'):
+                self.game_ref.score += 100  # Boss = 100 điểm
+                self.game_ref.total_kills += 1  # Boss = 1 kill
+
+            # Thêm mile stone nếu cha nội nào rảnh quá chơi quá 180p 1 ngày
+            if (hasattr(self.game_ref, 'boss_score_milestones') and self.current_boss_score_milestone is not None):
+                milestones = self.game_ref.boss_score_milestones
+                
+                # Chỉ thêm milestone mới nếu đã đánh bại boss cuối cùng trong danh sách
+                if len(milestones) > 0 and self.current_boss_score_milestone == milestones[-1]:
+                    new_milestone = milestones[-1] + 1000  # Tăng 1000 điểm mỗi boss
+                    milestones.append(new_milestone)
             self._on_boss_dead()
 
     # ----------------------------------------------------
@@ -153,6 +234,13 @@ class BossManager:
             item = Item(cx + offset_x, cy + offset_y, item_type)
             self.item_group.add(item)
 
+            self.boss.kill()
+            self.boss = None
+            setattr(self.spawner, "stop_spawn", False)
+            self.spawning = False
+            # trả về 
+            self.current_boss_score_milestone = None
+            
         self.boss.kill()
         self.boss = None
         setattr(self.spawner, "stop_spawn", False)
