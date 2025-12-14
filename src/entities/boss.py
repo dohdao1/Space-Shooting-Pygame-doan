@@ -18,7 +18,7 @@ class Boss(pygame.sprite.Sprite):
         self.mask = pygame.mask.from_surface(self.image)
 
         # stats
-        self.max_hp = 2000
+        self.max_hp = 20
         self.hp = self.max_hp
 
         # movement

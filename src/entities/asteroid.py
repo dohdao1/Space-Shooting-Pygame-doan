@@ -11,15 +11,17 @@ class AsteroidType(Enum):
     LARGE = 3
 
 ASTEROID_STATS = {
-    AsteroidType.SMALL:  {"hp": 2, "speed": (28), "img": "assets/images/asteroid/small_asteroid.png"},
-    AsteroidType.MEDIUM: {"hp": 3, "speed": (25), "img": "assets/images/asteroid/medium_asteroid.png"},
-    AsteroidType.LARGE:  {"hp": 4, "speed": (25), "img": "assets/images/asteroid/large_asteroid.png"},
+    AsteroidType.SMALL:  {"hp": 2, "speed": (28),"score":10, "img": "assets/images/asteroid/small_asteroid.png"},
+    AsteroidType.MEDIUM: {"hp": 3, "speed": (25),"score":20, "img": "assets/images/asteroid/medium_asteroid.png"},
+    AsteroidType.LARGE:  {"hp": 4, "speed": (25),"score":30, "img": "assets/images/asteroid/large_asteroid.png"},
 }
 
 class Asteroid(pygame.sprite.Sprite):
     def __init__(self, item_dropper,difficulty=1.0, screen_width=800):
         super().__init__()
         self.type = random.choice(list(AsteroidType))
+        stats = ASTEROID_STATS[self.type]
+        self.base_score = stats["score"]
         self.difficulty = difficulty
         self.screen_width = screen_width
         self.item_dropper = item_dropper
@@ -51,6 +53,8 @@ class Asteroid(pygame.sprite.Sprite):
         speed = stats["speed"]
         self.speed = (speed) + (self.difficulty * 5)
 
+        # self.score = stats["score"]
+
         # Spawn random từ trên trời rơi xuống
         self.rect.x = random.randint(0, self.screen_width - self.rect.width)
         self.rect.y = random.randint(-200, -50)
@@ -67,6 +71,7 @@ class Asteroid(pygame.sprite.Sprite):
         if self.hp <= 0:
             self.active = False
             self.kill()
+            
             return "dead"
         
         return "hit"

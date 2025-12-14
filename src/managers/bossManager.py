@@ -140,6 +140,7 @@ class BossManager:
     # ----------------------------------------------------
     def _on_boss_dead(self):
         cx, cy = self.boss.rect.center
+        self.game_ref.score += 100
 
         drop_count = random.randint(3, 5)
         drop_types = self.boss_drop_items.copy()

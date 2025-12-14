@@ -41,13 +41,15 @@ class AsteroidSpawner:
 
         # update tất cả asteroid
         self.asteroids.update(dt)
-        self.hit_particles.update()
+        self.hit_particles.update(dt)
         self.explosions.update()
 
     # ---------------------------------------------------------
     def try_spawn(self):
         asteroid = Asteroid(difficulty=self.difficulty, screen_width=self.screen_width,item_dropper=self.item_dropper)
         self.asteroids.add(asteroid)
+        print("SPAWN:", asteroid.type, "score =", asteroid.base_score)
+
 
     # ---------------------------------------------------------
     def handle_bullet_collision(self, bullets, game_screen = None):
@@ -60,10 +62,24 @@ class AsteroidSpawner:
                     self.hit_particles.add(particle)
                 if status == "dead":
                     if game_screen:
-                        game_screen.score += 10     # này sau cập nhật cho từng thiên tạch cụ thể nha
-                        game_screen.total_kills += 1    # Cập nhật điểm kill để lưu vào save
-                    explosion = Explosion(asteroid.rect.centerx, asteroid.rect.centery)
+                        score = int(asteroid.base_score * (1 + self.difficulty * 0.1))
+                        game_screen.score += score
+                        game_screen.total_kills += 1
+
+                        print(
+                            "KILL:", asteroid.type,
+                            "BASE:", asteroid.base_score,
+                            "ADD:", score,
+                            "TOTAL:", game_screen.score
+                        )
+
+                    explosion = Explosion(
+                        asteroid.rect.centerx,
+                        asteroid.rect.centery
+                    )
                     self.explosions.add(explosion)
+
+        
     def draw(self, screen):
         self.asteroids.draw(screen)
         self.hit_particles.draw(screen)

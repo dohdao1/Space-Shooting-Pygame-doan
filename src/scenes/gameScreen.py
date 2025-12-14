@@ -10,6 +10,8 @@ from managers.bossManager import BossManager
 from managers.collision import CollisionSystem
 from entities.item import Item
 from managers.effects import ShieldBreakParticle, Shockwave
+from entities.hit_particle import HitParticle
+
 
 sys.path.append(os.path.dirname(os.path.abspath(__file__)))
 
