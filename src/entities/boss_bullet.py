@@ -13,8 +13,11 @@ class BossBullet(pygame.sprite.Sprite):
         # chuẩn hóa
         bullet_img_path = os.path.normpath(bullet_img_path)
         try:
-            self.image = pygame.image.load(resource_path(bullet_img_path)).convert_alpha()
-            print("load dc rồi nha")
+            image_0 = pygame.image.load(resource_path(bullet_img_path)).convert_alpha()
+            scale_factor = 0.6 # tỉ lệ
+            new_width = int(image_0.get_width() * scale_factor)
+            new_height = int(image_0.get_height() * scale_factor)
+            self.image = pygame.transform.scale(image_0, (new_width, new_height))
         except Exception:
             self.image = pygame.Surface((8,16), pygame.SRCALPHA)
             pygame.draw.rect(self.image, (255,80,80), (0,0,8,16))
