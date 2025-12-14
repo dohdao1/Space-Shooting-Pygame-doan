@@ -60,7 +60,7 @@ class Boss(pygame.sprite.Sprite):
 
         # move left/right
         self.rect.x += self.dir * self.speed_x * dt
-        if self.rect.left < 20 or self.rect.right > 780:
+        if self.rect.left < 20 or self.rect.right > 770:
             self.dir *= -1
 
         # shoot

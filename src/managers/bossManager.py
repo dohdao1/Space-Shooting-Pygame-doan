@@ -119,7 +119,7 @@ class BossManager:
         for bullet in hits:
             self.boss.take_damage(bullet.damage)
 
-            # HIT PARTICLE (dùng effect của bạn)
+            # HIT PARTICLE
             self.hit_particles.add(
                 Explosion(bullet.rect.centerx, bullet.rect.centery)
             )
