@@ -1,4 +1,4 @@
-import pygame, random, math
+import pygame, datetime
 import sys, os
 
 from managers.collision import CollisionSystem
@@ -23,9 +23,9 @@ class gameScreen(baseScreen):
         self.font = pygame.font.SysFont('arial', 32)
         self.font_suggest = pygame.font.SysFont('arial', 20)
 
-        self.background_image = pygame.image.load("assets/images/ui/background.png").convert()
+        self.background_image = pygame.image.load(resource_path("assets/images/ui/background.png")).convert()
 
-        self.heart_img = pygame.image.load("assets/images/ui/heart.png").convert_alpha()
+        self.heart_img = pygame.image.load(resource_path("assets/images/ui/heart.png")).convert_alpha()
         self.background_image = pygame.transform.scale(
             self.background_image, 
             (self.screen.get_width(), self.screen.get_height())
@@ -34,12 +34,12 @@ class gameScreen(baseScreen):
 
         self.item_icons = {}
         for name, path in Item.ICONS.items():
-            img = pygame.image.load(path).convert_alpha()
+            img = pygame.image.load(resource_path(path)).convert_alpha()
             img = pygame.transform.smoothscale(img, (35, 35))
             self.item_icons[name] = img
 
         # mốc điểm spawn boss
-        self.boss_score_milestones = [100, 2000, 4000]
+        self.boss_score_milestones = [200, 500, 1000]
         
 
         self.reset_game_state()
@@ -123,7 +123,7 @@ class gameScreen(baseScreen):
         for event in events:
             pygame.mouse.set_visible(False)
             if event.type == pygame.QUIT:
-                self.save_current_stats()   # Lưu trước khi thoát
+                self.save_game_progress(status="quit")   # Lưu trước khi thoát
                 self.game.running = False
 
             elif event.type == pygame.KEYDOWN:
@@ -134,12 +134,7 @@ class gameScreen(baseScreen):
                     self.game.audio_manager.pause_music()
                     pygame.mouse.set_visible(True)
                     self.switch_to("pause")
-                elif event.key == pygame.K_l:
-                    self.lives = 0
-                elif event.key == pygame.K_t:
-                    self.score += 10
-                elif event.key == pygame.K_y:
-                    self.lives -= 1
+
             elif event.type == pygame.MOUSEBUTTONDOWN:
                 if event.button == 1:
                     mouse_pos = pygame.mouse.get_pos()
@@ -157,7 +152,7 @@ class gameScreen(baseScreen):
         if self.screen_shake_time > 0:
             self.screen_shake_time -= dt_ms
 
-        # ⭐ CẬP NHẬT NHÓM SHOCKWAVE
+        # CẬP NHẬT NHÓM SHOCKWAVE
         try:
             self.shockwave_group.update(dt) 
         except TypeError:
@@ -165,14 +160,14 @@ class gameScreen(baseScreen):
 
         # bomb effect
         if getattr(self.player, "trigger_bomb", False):
-            # ⭐ KÍCH HOẠT RUNG KHI DÙNG BOMB
+            # KÍCH HOẠT RUNG KHI DÙNG BOMB
             self.screen_shake_time = 1000 # Rung 1 giây (1000ms)
             shockwave = Shockwave(self.player.rect.center)
             self.shockwave_group.add(shockwave)
             self.game.audio_manager.play_sound("bomb_explosion")
             self.player.trigger_bomb = False
         
-        # ⭐ COLLISION: SHOCKWAVE VS ASTEROID
+        # COLLISION: SHOCKWAVE VS ASTEROID
         shockwave_active = len(self.shockwave_group) > 0
         if shockwave_active:
             for shockwave in self.shockwave_group:
@@ -235,12 +230,18 @@ class gameScreen(baseScreen):
             except TypeError:
                 self.asteroid_group.update()
 
-            # ⭐ COLLISION: BULLET VS ASTEROID → nhận dropped_items
+            # COLLISION: BULLET VS ASTEROID → nhận dropped_items
             hit_particles, death_particles, dropped_items = self.collision.bullet_vs_asteroid(
                 self.bullet_group,
                 self.spawner
             )
-            # ⭐ Spawn Item rơi ra từ asteroid
+
+            kills_from_asteroids = len(dropped_items)
+            if kills_from_asteroids > 0:
+                self.total_kills += kills_from_asteroids
+                self.score += kills_from_asteroids * 10
+
+            # Spawn Item rơi ra từ asteroid
             for drop in dropped_items:
                 item = Item(drop["pos"][0], drop["pos"][1], drop["type"])
                 self.item_group.add(item)
@@ -280,7 +281,7 @@ class gameScreen(baseScreen):
         except:
             self.item_group.update()
         
-        # ⭐ PLAYER ĂN ITEM
+        # PLAYER ĂN ITEM
         picked = pygame.sprite.spritecollide(
             self.player, 
             self.item_group, 
@@ -290,7 +291,7 @@ class gameScreen(baseScreen):
         for item in picked:
             self.item_manager.apply_item(item.type)
 
-        # ⭐ UPDATE ITEM MANAGER
+        # UPDATE ITEM MANAGER
         self.item_manager.update()
 
         # UI hover
@@ -328,7 +329,7 @@ class gameScreen(baseScreen):
         # vẽ khiên nếu có
         self.player.draw_shield(self.screen)
 
-        # ⭐ VẼ HIỆU ỨNG VỠ KHIÊN
+        # VẼ HIỆU ỨNG VỠ KHIÊN
         self.shield_break_effects.draw(self.screen)
 
         # draw asteroids (spawner may pause drawing but group remains)
@@ -353,43 +354,27 @@ class gameScreen(baseScreen):
 
         # UI
         score_text = self.font.render(f"SCORE: {self.score}", True, (255, 255, 255))
-        self.screen.blit(score_text, (20, 20))
+        self.screen.blit(score_text, (20, 40))
 
-        # ❤️ Draw lives as hearts (max 5)
+        # Draw lives as hearts (max 5)
         for i in range(min(self.lives, 5)):
-            self.screen.blit(self.heart_img, (20 + i * 40, 60))
+            self.screen.blit(self.heart_img, (20 + i * 40, 80))
 
         # ----- ITEM TIMELINE -----
         self.draw_item_timelines()
 
-
-        # help
-        help_text = self.font_suggest.render("ESC/P: Pause Menu | L: Lose(thua ngay)", True, (200, 200, 200))
-        self.screen.blit(help_text, (3*self.screen.get_width()/5, 20))
-
     # Xử lý khi game thua
     def game_over(self):
-        # Tính coin thưởng dựa trên điểm số
-        coin_reward = self.score // 10  # 1 coin cho mỗi 10 điểm
-        
-        # Cập nhật điểm cao
-        self.game.save_manager.update_high_score(self.score)
-        
-        # Thêm coin vào tài khoản
-        self.game.save_manager.add_coin(coin_reward)
-        print(f"cộng thêm là:{coin_reward}")
-        
-        # Thêm vào lịch sử game
-        self.game.save_manager.add_game_history(
-            score=self.score,
-            play_time=self.play_time,
-            kills=self.total_kills,
-            deaths=1  # mỗi lần thua tính 1 death
-        )
-        print(f"giá trị là:{self.score} | play time: {self.play_time} | kill: {self.total_kills}")
-
+        self.save_game_progress(status="game_over")
+        # Chạy âm thanh thua
         self.game.audio_manager.stop_music()
-    # ⭐ HÀM TẠO HIỆU ỨNG VỠ KHIÊN
+        self.game.audio_manager.play_sound("lose")
+        
+        # Chuyển sang màn hình game over
+        self.game.game_over_data = {"score": self.score}
+        pygame.mouse.set_visible(True)
+        self.switch_to("game_over", self.score)
+
     def create_shield_break_particles(self, center_pos):
         for _ in range(15): # Tạo 15 mảnh vỡ
             particle = ShieldBreakParticle(center_pos[0], center_pos[1])
@@ -399,11 +384,18 @@ class gameScreen(baseScreen):
     # Lưu tạm thời khi pause hoặc thoát game
     def save_current_stats(self):
         stats = self.game.save_manager.load_stats()
-        
+
         # Cập nhật điểm cao nếu cần
         if self.score > stats['high_score']:
             stats['high_score'] = self.score
             self.game.save_manager.save_stats(stats)
+
+        stats['last_score'] = self.score
+        stats['last_kills'] = self.total_kills
+        stats['last_play_time'] = int(self.play_time)
+        stats['last_save_time'] = datetime.datetime.now().strftime("%Y-%m-%d %H:%M")
+        
+        self.game.save_manager.save_stats(stats)
     
 
     def draw_item_timelines(self):
@@ -446,3 +438,39 @@ class gameScreen(baseScreen):
 
             # Border
             pygame.draw.rect(self.screen, (255, 255, 255), (bar_x, bar_y, bar_width, bar_height), 2, border_radius=6)
+
+    # dùng chung cho thua hoặc out game
+    def save_game_progress(self, status="quit"):
+        stats = self.game.save_manager.load_stats()
+        
+        # Tính coin thưởng
+        coin_reward = self.score // 10
+        coin_from_kills = self.total_kills // 2
+        total_coin = coin_reward + coin_from_kills
+                
+        # Cập nhật điểm cao
+        if self.score > stats['high_score']:
+            stats['high_score'] = self.score
+        
+        # CỘNG DỒN TỔNG STATS (chỉ khi kết thúc game)
+        stats['total_games'] = stats.get('total_games', 0) + 1
+        stats['total_play_time'] = stats.get('total_play_time', 0) + int(self.play_time)
+        stats['total_kills'] = stats.get('total_kills', 0) + self.total_kills
+        
+        if status == "game_over":
+            stats['total_deaths'] = stats.get('total_deaths', 0) + 1
+        
+        # Thêm coin
+        stats['coin'] = stats.get('coin', 0) + total_coin
+        
+        # Lưu stats
+        self.game.save_manager.save_stats(stats)
+        
+        # Thêm vào lịch sử game
+        self.game.save_manager.add_game_history(
+            score=self.score,
+            play_time=int(self.play_time),
+            kills=self.total_kills,
+            deaths=1 if status == "game_over" else 0,
+            status=status
+        )

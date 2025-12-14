@@ -375,26 +375,30 @@ class SecureSaveManager:
         return False
     
     # Thêm lịch sử
-    def add_game_history(self, score, play_time, kills=0, deaths=0):
+    def add_game_history(self, score, play_time, kills=0, deaths=0,status="game_over"):
         stats = self.load_stats()
+
+        if 'game_history' not in stats:
+            stats['game_history'] = []  # Tạo mới nếu chưa có
         
         game_record = {
             'score': score,
             'play_time': play_time,
             'kills': kills,
             'deaths': deaths,
+            'status': status,
             'date': datetime.datetime.now().strftime("%Y-%m-%d %H:%M")
         }
         
         # Thêm vào đầu list (giữ 20 game gần nhất)
         stats['game_history'].insert(0, game_record)
-        stats['game_history'] = stats['game_history'][:20]
+        stats['game_history'] = stats['game_history'][:10]
         
         # Cập nhật tổng
-        stats['total_games'] += 1
-        stats['total_play_time'] += play_time
-        stats['total_kills'] += kills
-        stats['total_deaths'] += deaths
+        # stats['total_games'] += 1
+        # stats['total_play_time'] += play_time
+        # stats['total_kills'] += kills
+        # stats['total_deaths'] += deaths
         
         self.save_stats(stats)
         
