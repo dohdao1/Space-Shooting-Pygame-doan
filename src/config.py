@@ -17,7 +17,7 @@ BLUE = (0, 0, 255)
 PLAYER_START_LIVES = 3
 PLAYER_MAX_HEALTH = 100
 
-BASE_DROP_RATE = 0.3  # tỉ lệ rơi item cơ bản
+BASE_DROP_RATE = 0.5  # tỉ lệ rơi item cơ bản
 DIFFICULTY_BONUS = 0.01  # Mỗi độ khó +1%
 MAX_DROP_RATE = 0.6  # Tối đa 60%
 
